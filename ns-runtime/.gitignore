@@ -1,0 +1,7 @@
+*
+!.gitignore
+!LICENSE
+!Makefile
+!README.md
+!ns_runtime.c
+!ns_runtime.h
