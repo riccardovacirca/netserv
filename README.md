@@ -1,2 +1,2 @@
 # netserv
-Lightweight microservices framework
+Lightweight HTTP microservices framework

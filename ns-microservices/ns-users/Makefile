@@ -18,6 +18,11 @@ service:
 
 run:
 	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. \
+	./nsusers -h 0.0.0.0 -p 8081 -l ./nsusers.log -d mysql \
+	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
+
+debug:
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. \
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
 	./nsusers -h 0.0.0.0 -p 8081 -l ./nsusers.log -d mysql \
 	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"

@@ -2,7 +2,7 @@
   let data: any[] = [];
   async function fetchData() {
     try {
-      const response = await fetch('http://example.local/api/users/users-list');
+      const response = await fetch('/api/users/users-list');
       const jsonData = await response.json();
       data = jsonData.out;
       console.log(data);
@@ -29,3 +29,4 @@
     {/each}
   </tbody>
 </table>
+

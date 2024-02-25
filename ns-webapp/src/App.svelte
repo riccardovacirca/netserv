@@ -1,13 +1,9 @@
-<script lang="ts">
-  import Table from './lib/Table.svelte'
+<script>
+  import LoginComponent from './lib/LoginComponent.svelte';
 </script>
 
 <main>
-  <h1>ns-webapp</h1>
   <div class="card">
-    <Table />
+    <LoginComponent />
   </div>
 </main>
-
-<style>
-</style>

@@ -3,6 +3,10 @@
 
 #include "ns_runtime.h"
 
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
 #define true 1
 #define false 0
 
@@ -152,20 +156,16 @@ int SignInController(ns_service_t *s)
     st.flag.args = (args != NULL) && (ns_table_nelts(args) == 2);
     if ((st.error = !st.flag.args)) {
       ns_log(s->logger, "ERROR", args == NULL
-        ? "args == NULL"
-        : "ns_table_nelts(args) == 2");
-      printf("%d\n", ns_table_nelts(args));
-
-      const char *u = apr_table_get(args, "username");
-      if (u != NULL){
-        printf("OK username\n");
+        ? "(args == NULL)"
+        : "(ns_table_nelts(args) != 2)");
+      if (args != NULL) {
+        if (apr_table_get(args, "username") == NULL) {
+          ns_log(s->logger, "ERROR", "username == NULL");
+        }
+        if (apr_table_get(args, "password") == NULL) {
+          ns_log(s->logger, "ERROR", "password == NULL");
+        }
       }
-
-      const char *p = apr_table_get(args, "password");
-      if (p != NULL){
-        printf("OK password\n");
-      }
-
       break;
     }
 
@@ -187,7 +187,7 @@ int SignInController(ns_service_t *s)
       break;
     }
 
-    ns_http_response_header_set(s->response, "Set-Cookie", "access_token=abc123");
+    //ns_http_response_header_set(s->response, "Set-Cookie", "access_token=abc123");
     ns_printf(s, JSON_RESPONSE, "false", "null", json);
   } while (0);
   if (st.error) {
