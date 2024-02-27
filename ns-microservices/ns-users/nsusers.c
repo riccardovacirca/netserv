@@ -1,5 +1,3 @@
-// MIT License
-// Copyright (c) 2024 Riccardo Vacirca <rvacirca23@gmail.com>
 
 #include "ns_runtime.h"
 
@@ -19,20 +17,20 @@
 
 int authorize_route(ns_service_t *s)
 {
+  printf("a %d\n", s != NULL);
+  printf("b %d\n", s->request != NULL);
+  printf("c %d\n", s->request->password != NULL);
   return s && s->request
-           && s->request->password
-           && strcmp(s->request->password, "abc123") == 0;
+           && s->request->password;
+           //&& strcmp(s->request->password, "abc123") == 0;
 }
 
 // Models
 
 int SignUpModel(ns_service_t *s, void **res, apr_table_t *args)
 {
-  const char sql[] = "INSERT INTO users (username, password) "
-                     "VALUES (%s, %s)";
-  return s->dbd
-    ? ns_dbd_prepared_query(s->pool, s->dbd, sql, args)
-    : 0;
+  const char sql[] = "INSERT INTO users (username, password) VALUES (%s, %s)";
+  return s->dbd ? ns_dbd_prepared_query(s->pool, s->dbd, sql, args) : 0;
 }
 
 int SignInModel(ns_service_t *s, void **res, apr_table_t *args)
@@ -46,17 +44,18 @@ int SignInModel(ns_service_t *s, void **res, apr_table_t *args)
   return *res != NULL;
 }
 
-int UserModel(ns_service_t *s, void **res, apr_table_t *args) {
+int UserModel(ns_service_t *s, void **res, apr_table_t *args)
+{
   *res = NULL;
-  const char sql[] = "SELECT id, username "
-                     "FROM users WHERE id=%s";
+  const char sql[] = "SELECT id, username FROM users WHERE id=%s";
   if (s->dbd != NULL) {
     *res = (void*)ns_dbd_prepared_select(s->pool, s->dbd, sql, args);
   }
   return *res != NULL;
 }
 
-int UsersListModel(ns_service_t *s, void **res, apr_table_t *args) {
+int UsersListModel(ns_service_t *s, void **res, apr_table_t *args)
+{
   *res = NULL;
   const char sql[] = "SELECT id, username FROM users";
   if (s->dbd != NULL) {
@@ -67,13 +66,14 @@ int UsersListModel(ns_service_t *s, void **res, apr_table_t *args) {
 
 // Controllers
 
-ns_request_validator_t SignUpRequestValidator[] = {
+ns_request_validator_t SignUpRequestValidator[] =
+{
   {"username", NS_REQUEST_T_STRING, NS_REQUEST_F_NONE},
   {"password", NS_REQUEST_T_STRING, NS_REQUEST_F_MD5}
 };
 
-int SignUpController(ns_service_t *s) {
-  
+int SignUpController(ns_service_t *s)
+{
   struct state_t {
     int error, result;
     struct flag_t { int args, result, json; } flag;
@@ -106,6 +106,7 @@ int SignUpController(ns_service_t *s) {
     }
 
     ns_printf(s, JSON_RESPONSE, "false", "null", json);
+
   } while (0);
 
   if (st.error) {
@@ -117,15 +118,21 @@ int SignUpController(ns_service_t *s) {
     } else {
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
-    ns_printf(s, JSON_RESPONSE, "true", er, "null");
+    if (er != NULL) {
+      ns_printf(s, JSON_RESPONSE, "true", er, "null");
+    } else {
+      ns_printf(s, "%s\r\n", "An error occurred.");
+    }
   }
+
   return 200;
 }
 
 /**
  * @brief Validator of the HTTP request arguments
  */
-ns_request_validator_t SignInRequestValidator[] = {
+ns_request_validator_t SignInRequestValidator[] =
+{
   {"username", NS_REQUEST_T_STRING, NS_REQUEST_F_NONE},
   {"password", NS_REQUEST_T_PASSWORD, NS_REQUEST_F_MD5}
 };
@@ -155,17 +162,6 @@ int SignInController(ns_service_t *s)
     args = ns_http_request_validate_args(s->request, SignInRequestValidator, 2);
     st.flag.args = (args != NULL) && (ns_table_nelts(args) == 2);
     if ((st.error = !st.flag.args)) {
-      ns_log(s->logger, "ERROR", args == NULL
-        ? "(args == NULL)"
-        : "(ns_table_nelts(args) != 2)");
-      if (args != NULL) {
-        if (apr_table_get(args, "username") == NULL) {
-          ns_log(s->logger, "ERROR", "username == NULL");
-        }
-        if (apr_table_get(args, "password") == NULL) {
-          ns_log(s->logger, "ERROR", "password == NULL");
-        }
-      }
       break;
     }
 
@@ -189,11 +185,13 @@ int SignInController(ns_service_t *s)
 
     //ns_http_response_header_set(s->response, "Set-Cookie", "access_token=abc123");
     ns_printf(s, JSON_RESPONSE, "false", "null", json);
+
   } while (0);
+
   if (st.error) {
     const char *er = NULL;
     if (!st.flag.args) {
-      er = ns_json_encode(s->pool, "Validation failure", NS_JSON_T_STRING);
+      er = ns_json_encode(s->pool, "Invalid request args", NS_JSON_T_STRING);
     } else if (!st.flag.user) {
       er = ns_json_encode(s->pool, "Invalid user", NS_JSON_T_STRING);
     } else if (!st.flag.json) {
@@ -201,8 +199,13 @@ int SignInController(ns_service_t *s)
     } else {
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
-    ns_printf(s, JSON_RESPONSE, "true", er, "null");
+    if (er != NULL) {
+      ns_printf(s, JSON_RESPONSE, "true", er, "null");
+    } else {
+      ns_printf(s, "%s\r\n", "An error occurred.");
+    }
   }
+
   return 200;
 }
 
@@ -222,15 +225,19 @@ int UsersListController(ns_service_t *s)
     .flag.list = false, .flag.json = false,
     .error = false, .list = NULL
   };
+
   do {
+
     // Sets the value of the Content-Type in the response header
     const char ctype[] = "application/json";
     ns_http_response_header_set(s->response, "Content-Type", ctype);
+
     // Retrieves the list of users
     st.flag.list = UsersListModel(s, (void*)(&st.list), NULL);
     if ((st.error = !st.flag.list)) {
       break;
     }
+
     // Encodes the response in JSON format
     const char *json = ns_json_encode(s->pool, (const void*)st.list,
                                       NS_JSON_T_VECTOR|NS_JSON_T_TABLE);
@@ -238,9 +245,12 @@ int UsersListController(ns_service_t *s)
     if ((st.error = !st.flag.json)) {
       break;
     }
+
     // Sends the response to the client
     ns_printf(s, JSON_RESPONSE, "false", "null", json);
+
   } while (0);
+
   if (st.error) {
     const char *er = NULL;
     if (!st.flag.list) {
@@ -250,15 +260,21 @@ int UsersListController(ns_service_t *s)
     } else {
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
-    ns_printf(s, JSON_RESPONSE, "true", er, "null");
+    if (er != NULL) {
+      ns_printf(s, JSON_RESPONSE, "true", er, "null");
+    } else {
+      ns_printf(s, "%s\r\n", "An error occurred.");
+    }
   }
+
   return 200;
 }
 
 /**
  * @brief Validator of the HTTP request arguments
  */
-ns_request_validator_t UserRequestValidator[] = {
+ns_request_validator_t UserRequestValidator[] =
+{
   {"id", NS_REQUEST_T_INT, NS_REQUEST_F_NONE}
 };
 
@@ -268,7 +284,8 @@ ns_request_validator_t UserRequestValidator[] = {
  * @param s Service state
  * @return int HTTP status code
  */
-int UserController(ns_service_t *s) {
+int UserController(ns_service_t *s)
+{
   struct state_t {
     int error;
     apr_array_header_t *user;
@@ -277,15 +294,18 @@ int UserController(ns_service_t *s) {
     .flag.args = false, .flag.user = false, .flag.json = false,
     .error = false, .user = NULL
   };
+
   do {
     // Sets the value of the Content-Type in the response header
     const char ctype[] = "application/json";
     ns_http_response_header_set(s->response, "Content-Type", ctype);
+printf("test1\n");
     // Autorizza il controller
-    s->authorized = authorize_route(s);
-    if ((st.error = !s->authorized)) {
-      break;
-    }
+    // s->authorized = authorize_route(s);
+    // if ((st.error = !s->authorized)) {
+    //   break;
+    // }
+
     // Performs validation of the request arguments
     apr_table_t *args;
     args = ns_http_request_validate_args(s->request, UserRequestValidator, 1);
@@ -293,11 +313,15 @@ int UserController(ns_service_t *s) {
     if ((st.error = !st.flag.args)) {
       break;
     }
+printf("test2\n");
+
     // Retrieves the user based on the ID in the request
     st.flag.user = UserModel(s, (void*)(&st.user), args);
     if ((st.error = !st.flag.user)) {
       break;
     }
+printf("test3\n");
+
     // Encodes the response in JSON format
     const char *json = ns_json_encode(s->pool, (const void*)st.user,
                                       NS_JSON_T_VECTOR|NS_JSON_T_TABLE);
@@ -305,11 +329,14 @@ int UserController(ns_service_t *s) {
     if ((st.error = !st.flag.json)) {
       break;
     }
+
     // Sends the response to the client
     ns_printf(s, JSON_RESPONSE, "false", "null", json);
+
   } while (0);
+
   if (st.error) {
-    const char *er;
+    const char *er = NULL;
     if (!s->authorized) {
       er = ns_json_encode(s->pool, "Forbidden", NS_JSON_T_STRING);
     } else if (!st.flag.user) {
@@ -319,16 +346,22 @@ int UserController(ns_service_t *s) {
     } else {
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
-    ns_printf(s, JSON_RESPONSE, "true", er, "null");
+    if (er != NULL) {
+      ns_printf(s, JSON_RESPONSE, "true", er, "null");
+    } else {
+      ns_printf(s, "%s\r\n", "An error occurred.");
+    }
   }
+
   return 200;
 }
 
-void ns_handler(ns_service_t *s) {
+void ns_handler(ns_service_t *s)
+{
   ns_route(s, "POST", "/api/sign-in", SignInController);
   ns_route(s, "POST", "/api/sign-up", SignUpController);
-  //ns_authorized_routes(s) {
-  ns_route(s, "GET", "/api/user-data", UserController);
-  ns_route(s, "GET", "/api/users-list", UsersListController);
-  // }
+  ns_authorized_routes(s, authorize_route) {
+    ns_route(s, "GET", "/api/user-data", UserController);
+    ns_route(s, "GET", "/api/users-list", UsersListController);
+  }
 }

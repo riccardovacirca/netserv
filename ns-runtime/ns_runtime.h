@@ -308,12 +308,15 @@ void ns_handler(ns_service_t *sv);
 void ns_route(ns_service_t *sv, const char *mth, const char *uri, ns_route_t fn);
 void ns_printf(ns_service_t *sv, const char *fmt, ...);
 
-#define ns_authorized_routes(_s) \
+#define _ns_authorized_routes(_s) \
   for (\
     int _auth_flag = (_s->authorized = 1); \
     _auth_flag && !_s->response->status; \
     _auth_flag = (_s->authorized = 0)\
   )
+
+#define ns_authorized_routes(_s,_f) \
+  for (int _loop = 1; _loop && !_s->response->status && _f(_s);_loop = 0)
 
 #define ns_download(s, buf, sz, f, enc) \
   do {\
