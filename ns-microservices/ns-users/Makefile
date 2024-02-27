@@ -1,10 +1,8 @@
-# MIT License
-# Copyright (c) 2024 Riccardo Vacirca <rvacirca23@gmail.com>
 
 CC=clang
 CFLAGS=-std=gnu99
 INCLUDES=-I. -I/usr/include -I/usr/include/apr-1.0
-LD_FLAGS=-lapr-1 -laprutil-1 -lnsruntime
+LD_FLAGS=-lapr-1 -laprutil-1 -lnsruntime -lcrypto
 
 all: libnsusers service run
 
@@ -26,6 +24,16 @@ debug:
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
 	./nsusers -h 0.0.0.0 -p 8081 -l ./nsusers.log -d mysql \
 	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
+
+sign-in:
+	curl -i -v -X POST -c /tmp/cookies.txt \
+	"http://localhost:8081/api/sign-in" -d "username=bob&password=secret"
+
+user-data:
+	curl -i -v -X GET -b /tmp/cookies.txt "http://localhost:8081/api/user-data?id=1"
+
+users-list:
+	curl -i -v -X GET -b /tmp/cookies.txt "http://localhost:8081/api/users-list"
 
 clean:
 	rm -rf *.so *.log *.d nsusers

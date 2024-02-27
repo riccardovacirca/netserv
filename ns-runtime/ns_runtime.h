@@ -38,6 +38,12 @@
 #include "string.h"
 #include "signal.h"
 
+#include <openssl/evp.h>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
+#include <openssl/hmac.h>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -331,6 +337,10 @@ void ns_printf(ns_service_t *sv, const char *fmt, ...);
     ns_http_response_header_set(s->response, "Content-Type", "application/download");\
     ns_http_response_buffer_set(s->response, (void*)buf, sz);\
   } while (0)
+
+
+char* ns_jwt_base64_encode(const unsigned char *input, int length);
+const char* ns_jwt_token(apr_pool_t *mp, apr_table_t *clm, const char *key);
 
 #ifdef __cplusplus
 }

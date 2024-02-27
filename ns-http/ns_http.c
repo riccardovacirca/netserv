@@ -1,8 +1,3 @@
-/*
- * Copyright (c) 2024 Riccardo Vacirca <rvacirca23@gmail.com>
- * GNU General Public License version 2
- * 
-*/
 
 #include "apr.h"
 #include "apr_pools.h"

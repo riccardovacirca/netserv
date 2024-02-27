@@ -17,12 +17,9 @@
 
 int authorize_route(ns_service_t *s)
 {
-  printf("a %d\n", s != NULL);
-  printf("b %d\n", s->request != NULL);
-  printf("c %d\n", s->request->password != NULL);
   return s && s->request
-           && s->request->password;
-           //&& strcmp(s->request->password, "abc123") == 0;
+           && s->request->password
+           && (strcmp(s->request->password, "abc123") == 0);
 }
 
 // Models
@@ -36,11 +33,20 @@ int SignUpModel(ns_service_t *s, void **res, apr_table_t *args)
 int SignInModel(ns_service_t *s, void **res, apr_table_t *args)
 {
   *res = NULL;
+  apr_array_header_t *resultset = NULL;
   const char sql[] = "SELECT id, username FROM users "
                      "WHERE username=%s AND password=%s";
   if (s->dbd) {
-    *res = (void*)ns_dbd_prepared_select(s->pool, s->dbd, sql, args);
+    resultset = (void*)ns_dbd_prepared_select(s->pool, s->dbd, sql, args);
   }
+
+  if (resultset) {
+    apr_table_t *claims = APR_ARRAY_IDX(resultset, 0, apr_table_t*);
+    if (claims != NULL) {
+      *res = ns_jwt_token(s->pool, claims, "secret");
+    }
+  }
+
   return *res != NULL;
 }
 
@@ -147,11 +153,9 @@ int SignInController(ns_service_t *s)
 {
   struct state_t {
     int error;
-    apr_array_header_t *user;
-    struct flag_t { int args, user, json; } flag;
+    struct flag_t { int args, token; } flag;
   } st = {
-    .flag.args = false, .flag.user = false, .flag.json = false,
-    .error = false, .user = NULL
+    .flag.args = false, .flag.token = false, .error = false, .user = NULL
   };
 
   do {
@@ -170,21 +174,16 @@ int SignInController(ns_service_t *s)
       n = ns_table_nelts(s->request->args);
     }
 
-    st.flag.user = SignInModel(s, (void*)(&st.user), args);
-    if ((st.error = !st.flag.user)) {
+    const char *tok;
+    st.flag.token = SignInModel(s, (void*)(&tok), args);
+    if ((st.error = !st.flag.token)) {
       break;
     }
 
-    const char *json;
-    json = ns_json_encode(s->pool, (const void*)st.user,
-                          NS_JSON_T_VECTOR|NS_JSON_T_TABLE);
-    st.flag.json = json != NULL;
-    if ((st.error = !st.flag.json)) {
-      break;
-    }
-
-    //ns_http_response_header_set(s->response, "Set-Cookie", "access_token=abc123");
-    ns_printf(s, JSON_RESPONSE, "false", "null", json);
+    const char *cookies;
+    cookies = apr_psprintf(s->pool, "access_token=%s Path=/", (const char*)tok);
+    ns_http_response_header_set(s->response, "Set-Cookie", cookies);
+    ns_printf(s, JSON_RESPONSE, "false", "null", "true");
 
   } while (0);
 
@@ -194,8 +193,10 @@ int SignInController(ns_service_t *s)
       er = ns_json_encode(s->pool, "Invalid request args", NS_JSON_T_STRING);
     } else if (!st.flag.user) {
       er = ns_json_encode(s->pool, "Invalid user", NS_JSON_T_STRING);
-    } else if (!st.flag.json) {
-      er = ns_json_encode(s->pool, "JSON encoding failure", NS_JSON_T_STRING);
+    } else if (!st.flag.claims) {
+      er = ns_json_encode(s->pool, "JWT claims error", NS_JSON_T_STRING);
+    } else if (!st.flag.token) {
+      er = ns_json_encode(s->pool, "JWT token error", NS_JSON_T_STRING);
     } else {
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
@@ -299,12 +300,6 @@ int UserController(ns_service_t *s)
     // Sets the value of the Content-Type in the response header
     const char ctype[] = "application/json";
     ns_http_response_header_set(s->response, "Content-Type", ctype);
-printf("test1\n");
-    // Autorizza il controller
-    // s->authorized = authorize_route(s);
-    // if ((st.error = !s->authorized)) {
-    //   break;
-    // }
 
     // Performs validation of the request arguments
     apr_table_t *args;
@@ -313,14 +308,12 @@ printf("test1\n");
     if ((st.error = !st.flag.args)) {
       break;
     }
-printf("test2\n");
 
     // Retrieves the user based on the ID in the request
     st.flag.user = UserModel(s, (void*)(&st.user), args);
     if ((st.error = !st.flag.user)) {
       break;
     }
-printf("test3\n");
 
     // Encodes the response in JSON format
     const char *json = ns_json_encode(s->pool, (const void*)st.user,

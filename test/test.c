@@ -6,7 +6,13 @@
 #include <openssl/buffer.h>
 #include <openssl/hmac.h>
 
-char* base64_encode(const unsigned char *input, int length) {
+#include "apr.h"
+#include "apr_pools.h"
+#include "apr_strings.h"
+#include "apr_tables.h"
+
+char* ns_jwt_base64_encode(const unsigned char *input, int length)
+{
     BIO *bio, *b64;
     BUF_MEM *bufferPtr;
 
@@ -24,17 +30,17 @@ char* base64_encode(const unsigned char *input, int length) {
     return bufferPtr->data;
 }
 
-int main() {
-    // Crea un oggetto JSON per i claims
-    json_object *claims = json_object_new_object();
-    json_object_object_add(claims, "sub", json_object_new_string("user123"));
-    json_object_object_add(claims, "exp", json_object_new_int(time(NULL) + 3600)); // Scadenza del token (1 ora)
+const char* ns_jwt_token(apr_pool_t *mp, apr_table_t *clm, const char *key)
+{
+    char *result = NULL;
 
-    // Converti l'oggetto JSON in una stringa
+    json_object *claims = json_object_new_object();
+    json_object_object_add(claims, "sub", json_object_new_string(apr_table_get(clm, "sub")));
+    json_object_object_add(claims, "exp", json_object_new_int(atoi(apr_table_get(clm, "exp"))));
+
     const char *claims_str = json_object_to_json_string(claims);
 
     // Calcola la firma HMAC utilizzando la chiave segreta
-    const char *key = "your_secret_key";
     unsigned char hmac[EVP_MAX_MD_SIZE];
     unsigned int hmac_len;
     HMAC(EVP_sha256(), key, strlen(key), (const unsigned char *)claims_str, strlen(claims_str), hmac, &hmac_len);
@@ -42,16 +48,41 @@ int main() {
     // Codifica la firma HMAC in base64
     char *encoded_hmac = base64_encode(hmac, hmac_len);
 
-    // Concatena i segmenti del token JWT
-    char *token = malloc(strlen(claims_str) + strlen(encoded_hmac) + 2); // +2 per il '.' e il terminatore null
-    sprintf(token, "%s.%s", claims_str, encoded_hmac);
-
-    printf("Token JWT generato: %s\n", token);
+    result = apr_psprintf(mp, "%s.%s", claims_str, encoded_hmac);
 
     // Libera la memoria
     json_object_put(claims);
-    free(token);
     free(encoded_hmac);
+
+    return (const char*)result;
+}
+
+int main()
+{
+    apr_status_t rv;
+    apr_pool_t *mp;
+
+    rv  = apr_initialize();
+    if (rv != APR_SUCCESS) {
+        exit(EXIT_FAILURE);
+    }
+
+    rv = apr_pool_create(&mp, NULL);
+    if (rv != APR_SUCCESS) {
+        exit(EXIT_FAILURE);
+    }
+
+    apr_table_t *claims = apr_table_make(mp, 0);
+    apr_table_add(claims, "sub", "bob");
+    int timestamp = time(NULL) + 3600;
+    const char *exp = apr_psprintf(mp, "%d", timestamp);
+    apr_table_add(claims, "exp", exp);
+
+    const char *token = ns_jwt_token(mp, claims, "my_secret_key");
+    printf("%s\n", token);
+
+    apr_pool_destroy(mp);
+    apr_terminate();
 
     return 0;
 }
