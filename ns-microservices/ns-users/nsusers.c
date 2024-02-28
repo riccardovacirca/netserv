@@ -155,7 +155,7 @@ int SignInController(ns_service_t *s)
     int error;
     struct flag_t { int args, token; } flag;
   } st = {
-    .flag.args = false, .flag.token = false, .error = false, .user = NULL
+    .flag.args = false, .flag.token = false, .error = false
   };
 
   do {
@@ -191,10 +191,6 @@ int SignInController(ns_service_t *s)
     const char *er = NULL;
     if (!st.flag.args) {
       er = ns_json_encode(s->pool, "Invalid request args", NS_JSON_T_STRING);
-    } else if (!st.flag.user) {
-      er = ns_json_encode(s->pool, "Invalid user", NS_JSON_T_STRING);
-    } else if (!st.flag.claims) {
-      er = ns_json_encode(s->pool, "JWT claims error", NS_JSON_T_STRING);
     } else if (!st.flag.token) {
       er = ns_json_encode(s->pool, "JWT token error", NS_JSON_T_STRING);
     } else {
