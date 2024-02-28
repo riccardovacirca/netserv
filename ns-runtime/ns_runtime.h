@@ -340,8 +340,9 @@ void ns_printf(ns_service_t *sv, const char *fmt, ...);
 
 
 char* ns_jwt_base64_encode(const unsigned char *input, int length);
-const char* ns_jwt_token(apr_pool_t *mp, apr_table_t *clm, const char *key);
-
+char* ns_jwt_token_create(apr_pool_t *mp, apr_table_t *claims, const char *key);
+char* ns_hmac_encode(const char *key, const char *s, apr_size_t sz);
+int ns_jwt_token_validate(apr_pool_t *mp, const char *tok, const char *key);
 #ifdef __cplusplus
 }
 #endif

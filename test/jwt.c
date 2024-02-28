@@ -30,7 +30,7 @@ char* ns_jwt_base64_encode(const unsigned char *input, int length)
     return bufferPtr->data;
 }
 
-const char* ns_jwt_token(apr_pool_t *mp, apr_table_t *clm, const char *key)
+const char* ns_jwt_token_create(apr_pool_t *mp, apr_table_t *clm, const char *key)
 {
     char *result = NULL;
 
@@ -78,7 +78,7 @@ int main()
     const char *exp = apr_psprintf(mp, "%d", timestamp);
     apr_table_add(claims, "exp", exp);
 
-    const char *token = ns_jwt_token(mp, claims, "my_secret_key");
+    const char *token = ns_jwt_token_create(mp, claims, "my_secret_key");
     printf("%s\n", token);
 
     apr_pool_destroy(mp);

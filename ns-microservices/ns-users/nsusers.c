@@ -8,6 +8,8 @@
 #define true 1
 #define false 0
 
+#define JWT_SECRET_KEY "my_jwt_secret_key"
+
 /**
  * @brief Pattern of the response string
  */
@@ -17,9 +19,15 @@
 
 int authorize_route(ns_service_t *s)
 {
-  return s && s->request
-           && s->request->password
-           && (strcmp(s->request->password, "abc123") == 0);
+  if(s
+    && s->request
+    && s->request->password)
+      printf("%s\n", s->request->password);
+
+  return s
+    && s->request
+    && s->request->password
+    && ns_jwt_token_validate(s->pool, s->request->password, JWT_SECRET_KEY);
 }
 
 // Models
@@ -43,7 +51,7 @@ int SignInModel(ns_service_t *s, void **res, apr_table_t *args)
   if (resultset) {
     apr_table_t *claims = APR_ARRAY_IDX(resultset, 0, apr_table_t*);
     if (claims != NULL) {
-      *res = ns_jwt_token(s->pool, claims, "secret");
+      *res = ns_jwt_token_create(s->pool, claims, JWT_SECRET_KEY);
     }
   }
 
@@ -181,6 +189,7 @@ int SignInController(ns_service_t *s)
     }
 
     const char *cookies;
+    //const char *token = ns_str_replace(s->pool, (const char*)tok, "\"", "\\\"");
     cookies = apr_psprintf(s->pool, "access_token=%s Path=/", (const char*)tok);
     ns_http_response_header_set(s->response, "Set-Cookie", cookies);
     ns_printf(s, JSON_RESPONSE, "false", "null", "true");
@@ -297,6 +306,9 @@ int UserController(ns_service_t *s)
     const char ctype[] = "application/json";
     ns_http_response_header_set(s->response, "Content-Type", ctype);
 
+
+
+
     // Performs validation of the request arguments
     apr_table_t *args;
     args = ns_http_request_validate_args(s->request, UserRequestValidator, 1);
@@ -350,6 +362,7 @@ void ns_handler(ns_service_t *s)
   ns_route(s, "POST", "/api/sign-in", SignInController);
   ns_route(s, "POST", "/api/sign-up", SignUpController);
   ns_authorized_routes(s, authorize_route) {
+    printf("test1\n");
     ns_route(s, "GET", "/api/user-data", UserController);
     ns_route(s, "GET", "/api/users-list", UsersListController);
   }

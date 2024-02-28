@@ -2115,7 +2115,10 @@ void mg_http_creds(struct mg_http_message *hm, char *user, size_t userlen,
     mg_snprintf(pass, passlen, "%.*s", (int) v->len - 7, v->ptr + 7);
   } else if ((v = mg_http_get_header(hm, "Cookie")) != NULL) {
     struct mg_str t = mg_http_get_header_var(*v, mg_str_n("access_token", 12));
-    if (t.len > 0) mg_snprintf(pass, passlen, "%.*s", (int) t.len, t.ptr);
+    if (t.len > 0) {
+      printf("DEBUG -> %zu\n", t.len);
+      mg_snprintf(pass, passlen, "%.*s", (int) t.len, t.ptr);
+    }
   } else {
     mg_http_get_var(&hm->query, "access_token", pass, passlen);
   }

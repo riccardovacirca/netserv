@@ -1834,8 +1834,7 @@ void ns_route(ns_service_t *s, const char *mth, const char *uri, ns_route_t fn)
 
 
 
-void ns_printf(ns_service_t *s, const char *fmt, ...)
-{
+void ns_printf(ns_service_t *s, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   // Calcolo la lunghezza della stringa formattata
@@ -1865,37 +1864,94 @@ void ns_printf(ns_service_t *s, const char *fmt, ...)
   }
 }
 
-char* ns_jwt_base64_encode(const unsigned char *input, int length)
-{
-    BIO *bio, *b64;
-    BUF_MEM *bufferPtr;
-
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_new(BIO_s_mem());
-    bio = BIO_push(b64, bio);
-
-    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-    BIO_write(bio, input, length);
-    BIO_flush(bio);
-    BIO_get_mem_ptr(bio, &bufferPtr);
-    BIO_set_close(bio, BIO_NOCLOSE);
-    BIO_free_all(bio);
-
-    return bufferPtr->data;
+char* ns_jwt_base64_encode(const unsigned char *input, int length) {
+  BIO *bio, *b64;
+  BUF_MEM *bufferPtr;
+  b64 = BIO_new(BIO_f_base64());
+  bio = BIO_new(BIO_s_mem());
+  bio = BIO_push(b64, bio);
+  BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+  BIO_write(bio, input, length);
+  BIO_flush(bio);
+  BIO_get_mem_ptr(bio, &bufferPtr);
+  BIO_set_close(bio, BIO_NOCLOSE);
+  BIO_free_all(bio);
+  return bufferPtr->data;
 }
 
-const char* ns_jwt_token(apr_pool_t *mp, apr_table_t *claims, const char *key)
-{
+unsigned char* ns_jwt_base64_decode(const char *input, int length) {
+  BIO *bio, *b64;
+  unsigned char *buffer = (unsigned char *)malloc(length);
+  int decode_length = 0;
+  b64 = BIO_new(BIO_f_base64());
+  bio = BIO_new_mem_buf(input, length);
+  bio = BIO_push(b64, bio);
+  BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+  decode_length = BIO_read(bio, buffer, length);
+  BIO_free_all(bio);
+  // Trim padding characters '='
+  while (buffer[decode_length - 1] == '=')
+    decode_length--;
+  buffer = realloc(buffer, decode_length + 1);
+  buffer[decode_length] = '\0';
+  return buffer;
+}
+
+char* ns_hmac_encode(const char *key, const char *s, apr_size_t sz) {
   char *result = NULL;
-  if (mp && claims && key) {
-    const char *claims_str = ns_json_encode(mp, claims, NS_JSON_T_TABLE);
-    unsigned char hmac[EVP_MAX_MD_SIZE];
+  do {
+    if (key == NULL || s == NULL || sz <= 0) break;
     unsigned int hmac_len;
-    HMAC(EVP_sha256(), key, strlen(key), (const unsigned char *)claims_str,
-         strlen(claims_str), hmac, &hmac_len);
-    char *encoded_hmac = ns_jwt_base64_encode(hmac, hmac_len);
-    result = apr_psprintf(mp, "%s.%s", claims_str, encoded_hmac);
-    free(encoded_hmac);
-  }
-  return (const char*)result;
+    unsigned char hmac[EVP_MAX_MD_SIZE];
+    HMAC(EVP_sha256(), key, strlen(key), (const unsigned char *)s, sz, hmac, &hmac_len);
+    result = ns_jwt_base64_encode(hmac, hmac_len);
+  } while (0);
+  return result;
+}
+
+char* ns_jwt_token_create(apr_pool_t *mp, apr_table_t *claims, const char *key) {
+  char *result = NULL;
+  do {
+    if (mp == NULL || claims == NULL || key == NULL) break;
+    const char *claims_str;
+    claims_str = ns_json_encode(mp, claims, NS_JSON_T_TABLE);
+    if (claims_str == NULL) break;
+    const unsigned char head[] = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
+    char *enc_head, *enc_hmac, *enc_claims;
+    enc_head = ns_jwt_base64_encode(head, 27);
+    if (enc_head == NULL) break;
+    enc_claims = ns_jwt_base64_encode((const unsigned char*)claims_str, strlen(claims_str));
+    if (enc_claims == NULL) break;
+    enc_hmac = ns_hmac_encode(key, enc_claims, strlen(enc_claims));
+    if (enc_hmac == NULL) break;
+    result = apr_psprintf(mp, "%s.%s.%s", enc_head, enc_claims, enc_hmac);
+    free(enc_hmac);
+  } while (0);
+  return result;
+}
+
+int ns_jwt_token_validate(apr_pool_t *mp, const char *tok, const char *key) {
+  int result = 0;
+  do {
+    if (mp == NULL || tok == NULL || key == NULL) break;
+    apr_array_header_t *tok_ar = ns_split(mp, tok, ".");
+    if (tok_ar == NULL) break;
+    const char *claims = APR_ARRAY_IDX(tok_ar, 1, const char*);
+
+
+
+    if (claims == NULL) break;
+    
+    
+    unsigned char* test = ns_jwt_base64_decode(claims, strlen(claims));
+    printf(">>> %s\n", test);
+    
+    const char *enc_hmac = APR_ARRAY_IDX(tok_ar, 2, const char*);
+    if (enc_hmac == NULL) break;
+    const char *gen_hmac;
+    gen_hmac = (const char*)ns_hmac_encode(key, claims, strlen(claims));
+    if (gen_hmac == NULL) break;
+    result = (int)(strcmp(enc_hmac, gen_hmac) == 0);
+  } while (0);
+  return result;
 }
