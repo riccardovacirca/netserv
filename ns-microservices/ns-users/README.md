@@ -1,2 +1,2 @@
 # ns-users
-Example microservice for user management
+Example HTTP microservice for user management

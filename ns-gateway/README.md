@@ -1,2 +1,2 @@
 # ns-gateway
-API gateway for microservices based on nginx
+Nginx API gateway for HTTP microservices

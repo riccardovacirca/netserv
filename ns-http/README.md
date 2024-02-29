@@ -1,2 +1,2 @@
 # netserv-runtime
-Lightweight microservices HTTP daemon
+Lightweight HTTP microservices daemon
