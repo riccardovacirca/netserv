@@ -470,7 +470,7 @@ static int ns_http_request_multipart_parse(apr_pool_t *mp, ns_http_request_t *rq
  * @param fn_data Global server state
  */
 static void ns_http_request_handler(struct mg_connection *c,
-                                    int ev, void *ev_data, void *fn_data)
+                                    int ev, void *ev_data)
 {
   struct state_t {
     struct flag_t {
@@ -503,13 +503,13 @@ static void ns_http_request_handler(struct mg_connection *c,
       // Event data
       st.hm = (struct mg_http_message*)ev_data;
 
-      st.flag.fn_data = fn_data != NULL;
+      st.flag.fn_data = c->fn_data != NULL;
       if ((st.error = !st.flag.fn_data)) {
         break;
       }
 
       // Server data
-      st.server = (ns_server_t*)fn_data;
+      st.server = (ns_server_t*)c->fn_data;
       if (DEBUG) {
         ns_log((st.server)->logger, "INFO", "Client connected");
       }
@@ -813,7 +813,7 @@ static void ns_http_request_handler(struct mg_connection *c,
     apr_terminate();
   }
 
-  (void)fn_data;
+//  (void)fn_data;
 }
 
 /**

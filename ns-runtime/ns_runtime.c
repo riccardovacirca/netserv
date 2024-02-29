@@ -1,5 +1,3 @@
-// MIT License
-// Copyright (c) 2024 Riccardo Vacirca <rvacirca23@gmail.com>
 
 #include "ns_runtime.h"
 
@@ -7,14 +5,12 @@
  * COMMON
  */
 
-int ns_rand(int l, int h)
-{
+int ns_rand(int l, int h) {
   srand(time(NULL));
   return l < h ? (rand() % (h - l + 1)) + l : 0;
 }
 
-int ns_is_empty(const char *s)
-{
+int ns_is_empty(const char *s) {
   int rv = 1;
   if (s && (*s != '\0')) {
     apr_size_t l = strlen(s);
@@ -29,29 +25,21 @@ int ns_is_empty(const char *s)
   return rv;
 }
 
-int ns_is_int(const char *s)
-{
+int ns_is_int(const char *s) {
   int rv = 0;
   if (s && (*s != '\0')) {
-    // Puntatore alla fine della stringa
     char *endp;
-    // Converto la stringa in intero (in base 10)
     (void)strtol(s, &endp, 10);
-    // Verifico se il puntatore di fine stringa è valido
     rv = (endp != s) && (*endp == '\0');
   }
   return rv;
 }
 
-int ns_is_double(const char *s)
-{
+int ns_is_double(const char *s) {
   int rv = 0;
   if (s && (*s != '\0')) {
-    // Puntatore alla fine della stringa
     char *endp;
-    // Converto la stringa in double
     (void)strtod(s, &endp);
-    // Verifico se il puntatore di fine stringa è valido
     rv = (endp != s) && (*endp == '\0');
   }
   return rv;
@@ -242,8 +230,7 @@ const char* ns_replace_char(apr_pool_t *mp, const char *s, char f, char r)
   return !rv ? s : (const char*)rv;
 }
 
-char* ns_empty_string_make(apr_pool_t *mp)
-{
+char* ns_empty_string_make(apr_pool_t *mp) {
   char *rv = NULL;
   if (mp) {
     rv = (char*)apr_palloc(mp, 1);
@@ -1579,26 +1566,22 @@ const char* ns_dbd_field_value(apr_array_header_t *res, int i, const char *k)
   return apr_table_get(rec, k);
 }
 
-int ns_dbd_field_set(apr_array_header_t *r, int i, const char *k, const char *v)
-{
+int ns_dbd_field_set(apr_array_header_t *r, int i, const char *k, const char *v) {
   if (r == NULL || r->nelts <= 0 || i > (r->nelts-1)) return 1;
   apr_table_t* t = APR_ARRAY_IDX(r, i, apr_table_t*);
   apr_table_set(t, k, v);
   return 0;
 }
 
-int ns_dbd_close(ns_dbd_t *d)
-{
+int ns_dbd_close(ns_dbd_t *d) {
   return d == NULL ? 0 : apr_dbd_close(d->drv, d->hdl);
 }
 
-const char* ns_dbd_driver_name(ns_dbd_t *dbd)
-{
+const char* ns_dbd_driver_name(ns_dbd_t *dbd) {
   return dbd == NULL ? NULL : apr_dbd_name(dbd->drv);
 }
 
-const char* ns_dbd_error(ns_dbd_t *d)
-{
+const char* ns_dbd_error(ns_dbd_t *d) {
   return (d == NULL) ? NULL : d->er_msg;
 }
 
@@ -1608,30 +1591,33 @@ const char* ns_dbd_error(ns_dbd_t *d)
 
 ns_http_request_t* ns_http_request_alloc(apr_pool_t *mp)
 {
-  ns_http_request_t *r;
-  r = (ns_http_request_t*)apr_palloc(mp, sizeof(ns_http_request_t));
-  if (r) {
-    r->pool = mp;
-    r->args = NULL;
-    r->body = NULL;
-    r->headers = apr_table_make(mp, 0);
-    r->parsed_uri = apr_table_make(mp, 0);
-    r->query = NULL;
-    r->uri = NULL;
-    r->message = NULL;
-    r->multipart_data = NULL;
-    r->cookies = apr_table_make(mp, 0);
-    r->username = NULL;
-    r->password = NULL;
+  ns_http_request_t *r = NULL;
+  if (mp) {
+    r = (ns_http_request_t*)apr_palloc(mp, sizeof(ns_http_request_t));
+    if (r) {
+      r->pool = mp;
+      r->args = NULL;
+      r->body = NULL;
+      r->headers = apr_table_make(mp, 0);
+      r->parsed_uri = apr_table_make(mp, 0);
+      r->query = NULL;
+      r->uri = NULL;
+      r->message = NULL;
+      r->multipart_data = NULL;
+      r->cookies = apr_table_make(mp, 0);
+      r->username = NULL;
+      r->password = NULL;
+    }
   }
   return r;
 }
 
-apr_table_t *ns_http_request_validate_args(ns_http_request_t *r, ns_request_validator_t *vd, int nargs)
-{
+apr_table_t *ns_http_request_validate_args(ns_http_request_t *r,
+                                           ns_request_validator_t *vd,
+                                           int nargs) {
   int is_valid;
   const char *curr_v;
-  apr_table_t *result = apr_table_make(r->pool, 10);
+  apr_table_t *result = apr_table_make(r->pool, nargs);
   if (r && r->args) {
     for (int i = 0; i < nargs; ++i) {
       ns_request_validator_t v = vd[i];
@@ -1672,53 +1658,57 @@ apr_table_t *ns_http_request_validate_args(ns_http_request_t *r, ns_request_vali
   return result;
 }
 
-apr_table_t *ns_http_request_validate_multipart_args(ns_http_request_t *r, ns_request_validator_t *vd, int nargs)
-{
-  int is_valid;
-  const char *req_v;
-  apr_table_t *result = apr_table_make(r->pool, 10);
-  for (int i = 0; i < nargs; ++i) {
-    ns_request_validator_t v = vd[i];
-    for (int j = 0; j < r->multipart_data->nelts; ++j) {
-      apr_table_t *entry = APR_ARRAY_IDX(r->multipart_data, j, apr_table_t*);
-      if (!entry) {
-        continue;
-      }
-      const char *key = apr_table_get(entry, "name");
-      if (!key || (strcmp(v.key, key) != 0)) {
-        continue;
-      }
-      req_v = apr_table_get(entry, "value");
-      if (!req_v) {
-        continue;
-      }
-      is_valid = 0;
-      if (v.type == NS_REQUEST_T_INT) {
-        is_valid = ns_is_int(req_v);
-      } else if (v.type == NS_REQUEST_T_DOUBLE) {
-        is_valid = ns_is_double(req_v);
-      } else if (v.type == NS_REQUEST_T_STRING) {
-        is_valid = !ns_is_empty(req_v);
-      } else if (v.type == NS_REQUEST_T_PASSWORD) {
-        is_valid = !ns_is_empty(req_v);
-      } else if (v.type == NS_REQUEST_T_DATE) { // yyyy-mm-dd
-        if (!ns_is_empty(req_v) && strlen(req_v) == 10) {
-          apr_array_header_t *req_v_ar = ns_split(r->pool, req_v, "-");
-          if (req_v_ar && req_v_ar->nelts == 3) {
-            const char *y = APR_ARRAY_IDX(req_v_ar, 0, const char*);
-            const char *m = APR_ARRAY_IDX(req_v_ar, 1, const char*);
-            const char *d = APR_ARRAY_IDX(req_v_ar, 2, const char*);
-            is_valid = strlen(y) == 4 && ns_is_int(y) &&
-                       strlen(m) == 2 && ns_is_int(m) &&
-                       strlen(d) == 2 && ns_is_int(d);
+apr_table_t* ns_http_request_validate_multipart_args(ns_http_request_t *r,
+                                                     ns_request_validator_t *vd,
+                                                     int nargs) {
+  apr_table_t *result = NULL;
+  if (r && vd && nargs) {
+    int is_valid;
+    const char *req_v;
+    result = apr_table_make(r->pool, nargs);
+    for (int i = 0; i < nargs; ++i) {
+      ns_request_validator_t v = vd[i];
+      for (int j = 0; j < r->multipart_data->nelts; ++j) {
+        apr_table_t *entry = APR_ARRAY_IDX(r->multipart_data, j, apr_table_t*);
+        if (!entry) {
+          continue;
+        }
+        const char *key = apr_table_get(entry, "name");
+        if (!key || (strcmp(v.key, key) != 0)) {
+          continue;
+        }
+        req_v = apr_table_get(entry, "value");
+        if (!req_v) {
+          continue;
+        }
+        is_valid = 0;
+        if (v.type == NS_REQUEST_T_INT) {
+          is_valid = ns_is_int(req_v);
+        } else if (v.type == NS_REQUEST_T_DOUBLE) {
+          is_valid = ns_is_double(req_v);
+        } else if (v.type == NS_REQUEST_T_STRING) {
+          is_valid = !ns_is_empty(req_v);
+        } else if (v.type == NS_REQUEST_T_PASSWORD) {
+          is_valid = !ns_is_empty(req_v);
+        } else if (v.type == NS_REQUEST_T_DATE) { // yyyy-mm-dd
+          if (!ns_is_empty(req_v) && strlen(req_v) == 10) {
+            apr_array_header_t *req_v_ar = ns_split(r->pool, req_v, "-");
+            if (req_v_ar && req_v_ar->nelts == 3) {
+              const char *y = APR_ARRAY_IDX(req_v_ar, 0, const char*);
+              const char *m = APR_ARRAY_IDX(req_v_ar, 1, const char*);
+              const char *d = APR_ARRAY_IDX(req_v_ar, 2, const char*);
+              is_valid = strlen(y) == 4 && ns_is_int(y) &&
+                         strlen(m) == 2 && ns_is_int(m) &&
+                         strlen(d) == 2 && ns_is_int(d);
+            }
           }
         }
-      }
-      if (is_valid) {
-        if (v.filter == NS_REQUEST_F_MD5) {
-          req_v = ns_md5(r->pool, req_v);
+        if (is_valid) {
+          if (v.filter == NS_REQUEST_F_MD5) {
+            req_v = ns_md5(r->pool, req_v);
+          }
+          apr_table_set(result, v.key, req_v);
         }
-        apr_table_set(result, v.key, req_v);
       }
     }
   }
@@ -1729,36 +1719,37 @@ apr_table_t *ns_http_request_validate_multipart_args(ns_http_request_t *r, ns_re
  * HTTP RESPONSE
  */
 
-ns_http_response_t* ns_http_response_alloc(apr_pool_t *mp)
-{
-  ns_http_response_t *r;
-  r = (ns_http_response_t*)apr_palloc(mp, sizeof(ns_http_response_t));
-  if (r) {
-    r->pool = mp;
-    r->headers = apr_table_make(mp, 0);
-    r->status = 0;
-    r->size = 0;
-    r->buffer = NULL;
+ns_http_response_t* ns_http_response_alloc(apr_pool_t *mp) {
+  ns_http_response_t *r = NULL;
+  if (mp) {
+    r = (ns_http_response_t*)apr_palloc(mp, sizeof(ns_http_response_t));
+    if (r) {
+      r->pool = mp;
+      r->headers = apr_table_make(mp, 0);
+      r->status = 0;
+      r->size = 0;
+      r->buffer = NULL;
+    }
   }
   return r;
 }
 
 void ns_http_response_header_set(ns_http_response_t *r,
-                                 const char *k, const char *v)
-{
-  apr_table_set(r->headers, k, v);
+                                 const char *k, const char *v) {
+  if (r && k && v) {
+    apr_table_set(r->headers, k, v);
+  }
 }
 
-const char* ns_http_response_header_get(ns_http_response_t *r, const char *k)
-{
-  return apr_table_get(r->headers, k);
+const char* ns_http_response_header_get(ns_http_response_t *r, const char *k) {
+  return r && k ? apr_table_get(r->headers, k) : NULL;
 }
 
-const char* ns_http_response_headers_serialize(ns_http_response_t *r)
-{
+const char* ns_http_response_headers_serialize(ns_http_response_t *r) {
   const char *result = NULL;
-  int nelts = ns_table_nelts(r->headers);
-  if (nelts > 0) {
+  while (r) {
+    int nelts = ns_table_nelts(r->headers);
+    if (nelts <= 0) break;
     apr_table_entry_t *e;
     e = ns_table_entry(r->headers, 0);
     result = apr_psprintf(r->pool, "%s: %s\r\n", e->key, e->val);
@@ -1769,16 +1760,18 @@ const char* ns_http_response_headers_serialize(ns_http_response_t *r)
         result = apr_pstrcat(r->pool, result, h, NULL);
       }
     }
+    break;
   }
   return result;
 }
 
-void ns_http_response_buffer_set(ns_http_response_t *r, void *buf, size_t sz)
-{
-  r->size = sz;
-  r->buffer = apr_palloc(r->pool, sz);
-  if (r->buffer) {
-    memcpy(r->buffer, buf, sz);
+void ns_http_response_buffer_set(ns_http_response_t *r, void *buf, size_t sz) {
+  if (r && buf && sz) {
+    r->size = sz;
+    r->buffer = apr_palloc(r->pool, sz);
+    if (r->buffer) {
+      memcpy(r->buffer, buf, sz);
+    }
   }
 }
 
@@ -1786,53 +1779,32 @@ void ns_http_response_buffer_set(ns_http_response_t *r, void *buf, size_t sz)
  * SERVICE
  */
 
-ns_service_t* ns_alloc(apr_pool_t *mp)
-{
-  ns_service_t *s = apr_palloc(mp, sizeof(ns_service_t));
-  if (s) {
-    s->pool = mp;
-    s->authorized = 0;
-    s->er_msg = NULL;
-    s->request = NULL;
-    s->response = NULL;
-    s->dbd = NULL;
-    s->logger = NULL;
+ns_service_t* ns_alloc(apr_pool_t *mp) {
+  ns_service_t *s = NULL;
+  if (mp) {
+    s = (ns_service_t*)apr_palloc(mp, sizeof(ns_service_t));
+    if (s) {
+      s->pool = mp;
+      s->authorized = 0;
+      s->er_msg = NULL;
+      s->request = NULL;
+      s->response = NULL;
+      s->dbd = NULL;
+      s->logger = NULL;
+    }
   }
   return s;
 }
 
-void ns_route(ns_service_t *s, const char *mth, const char *uri, ns_route_t fn)
-{
-  if (s->response->status <= 0) {
-    if (strcmp(s->request->method, mth) == 0) {
-      if (strcmp(s->request->uri, uri) == 0) {
-        s->response->status = fn(s);
-      }
-    }
+void ns_route(ns_service_t *s, const char *mth, const char *uri, ns_route_t fn) {
+  while (s && mth && uri && fn) {
+    if (s->response->status) break;
+    if (strcmp(s->request->method, mth)) break;
+    if (strcmp(s->request->uri, uri)) break;
+    s->response->status = fn(s);
+    break;
   }
 }
-
-// // Aggiunge una stringa formattata al buffer dell'output
-// void ns_printf(ns_service_t *s, const char *fmt, ...)
-// {
-//   va_list args;
-//   va_start(args, fmt);
-//   char *s = apr_pvsprintf(s->pool, fmt, args);
-//   va_end(args);
-//   if (s != NULL) {
-//     s->response->is_binary = 0;
-//     if (s->response->buffer == NULL) {
-//       // Inizializzo il body della response HTTP
-//       s->response->buffer = apr_pstrdup(s->pool, s);
-//     } else {
-//       // Concateno la stringa al body della response HTTP
-//       s->response->buffer = apr_pstrcat(s->pool, s->response->buffer, s, NULL);
-//     }
-//   }
-// }
-
-
-
 
 void ns_printf(ns_service_t *s, const char *fmt, ...) {
   va_list args;
@@ -1864,94 +1836,93 @@ void ns_printf(ns_service_t *s, const char *fmt, ...) {
   }
 }
 
-char* ns_jwt_base64_encode(const unsigned char *input, int length) {
-  BIO *bio, *b64;
-  BUF_MEM *bufferPtr;
-  b64 = BIO_new(BIO_f_base64());
-  bio = BIO_new(BIO_s_mem());
-  bio = BIO_push(b64, bio);
-  BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-  BIO_write(bio, input, length);
-  BIO_flush(bio);
-  BIO_get_mem_ptr(bio, &bufferPtr);
-  BIO_set_close(bio, BIO_NOCLOSE);
-  BIO_free_all(bio);
-  return bufferPtr->data;
+char* ns_jwt_base64_encode(const unsigned char *s, int sz) {
+  char* result = NULL;
+  if (s && sz) {
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(bio, s, sz);
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    BIO_set_close(bio, BIO_NOCLOSE);
+    BIO_free_all(bio);
+    result = bufferPtr->data;
+  }
+  return result;
 }
 
-unsigned char* ns_jwt_base64_decode(const char *input, int length) {
-  BIO *bio, *b64;
-  unsigned char *buffer = (unsigned char *)malloc(length);
-  int decode_length = 0;
-  b64 = BIO_new(BIO_f_base64());
-  bio = BIO_new_mem_buf(input, length);
-  bio = BIO_push(b64, bio);
-  BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-  decode_length = BIO_read(bio, buffer, length);
-  BIO_free_all(bio);
-  // Trim padding characters '='
-  while (buffer[decode_length - 1] == '=')
-    decode_length--;
-  buffer = realloc(buffer, decode_length + 1);
-  buffer[decode_length] = '\0';
-  return buffer;
+unsigned char* ns_jwt_base64_decode(const char *s, int sz) {
+  unsigned char *result = NULL;
+  if (s && sz) {
+    BIO *bio, *b64;
+    result = (unsigned char *)malloc(sz);
+    int decode_length = 0;
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new_mem_buf(s, sz);
+    bio = BIO_push(b64, bio);
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    decode_length = BIO_read(bio, result, sz);
+    BIO_free_all(bio);
+    // Trim padding characters '='
+    while (result[decode_length - 1] == '=') {
+      decode_length--;
+    }
+    result = realloc(result, decode_length + 1);
+    result[decode_length] = '\0';
+  }
+  return result;
 }
 
 char* ns_hmac_encode(const char *key, const char *s, apr_size_t sz) {
   char *result = NULL;
-  do {
-    if (key == NULL || s == NULL || sz <= 0) break;
+  if (key && s && sz) {
     unsigned int hmac_len;
     unsigned char hmac[EVP_MAX_MD_SIZE];
     HMAC(EVP_sha256(), key, strlen(key), (const unsigned char *)s, sz, hmac, &hmac_len);
     result = ns_jwt_base64_encode(hmac, hmac_len);
-  } while (0);
+  }
   return result;
 }
 
 char* ns_jwt_token_create(apr_pool_t *mp, apr_table_t *claims, const char *key) {
   char *result = NULL;
-  do {
-    if (mp == NULL || claims == NULL || key == NULL) break;
+  while (mp && claims && key) {
     const char *claims_str;
     claims_str = ns_json_encode(mp, claims, NS_JSON_T_TABLE);
-    if (claims_str == NULL) break;
+    if (!claims_str) break;
     const unsigned char head[] = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
     char *enc_head, *enc_hmac, *enc_claims;
     enc_head = ns_jwt_base64_encode(head, 27);
-    if (enc_head == NULL) break;
+    if (!enc_head) break;
     enc_claims = ns_jwt_base64_encode((const unsigned char*)claims_str, strlen(claims_str));
-    if (enc_claims == NULL) break;
+    if (!enc_claims) break;
     enc_hmac = ns_hmac_encode(key, enc_claims, strlen(enc_claims));
-    if (enc_hmac == NULL) break;
-    result = apr_psprintf(mp, "%s.%s.%s", enc_head, enc_claims, enc_hmac);
+    if (!enc_hmac) break;
+    result = apr_psprintf(mp, "%s.%s.%s", head, enc_claims, enc_hmac);
     free(enc_hmac);
-  } while (0);
+    break;
+  }
   return result;
 }
 
 int ns_jwt_token_validate(apr_pool_t *mp, const char *tok, const char *key) {
   int result = 0;
-  do {
-    if (mp == NULL || tok == NULL || key == NULL) break;
+  while (mp && tok && key) {
     apr_array_header_t *tok_ar = ns_split(mp, tok, ".");
-    if (tok_ar == NULL) break;
+    if (!tok_ar) break;
     const char *claims = APR_ARRAY_IDX(tok_ar, 1, const char*);
-
-
-
-    if (claims == NULL) break;
-    
-    
-    unsigned char* test = ns_jwt_base64_decode(claims, strlen(claims));
-    printf(">>> %s\n", test);
-    
+    if (!claims) break;
     const char *enc_hmac = APR_ARRAY_IDX(tok_ar, 2, const char*);
-    if (enc_hmac == NULL) break;
+    if (!enc_hmac) break;
     const char *gen_hmac;
     gen_hmac = (const char*)ns_hmac_encode(key, claims, strlen(claims));
-    if (gen_hmac == NULL) break;
+    if (!gen_hmac) break;
     result = (int)(strcmp(enc_hmac, gen_hmac) == 0);
-  } while (0);
+    break;
+  }
   return result;
 }

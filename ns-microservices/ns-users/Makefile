@@ -1,7 +1,7 @@
 
 CC=clang
 CFLAGS=-std=gnu99
-INCLUDES=-I. -I/usr/include -I/usr/include/apr-1.0
+INCLUDES=-I. -I/usr/include -I/usr/include/apr-1.0 -I/home/riccardo/projects/mongoose
 LD_FLAGS=-lapr-1 -laprutil-1 -lnsruntime -lcrypto
 
 all: libnsusers service run
@@ -11,7 +11,7 @@ libnsusers:
 
 service:
 	$(CC) $(CFLAGS) \
-	-o nsusers ../../ns-http/mongoose.c ../../ns-http/ns_http.c \
+	-o nsusers /home/riccardo/projects/mongoose/mongoose.c ../../ns-http/ns_http.c \
 	$(INCLUDES) -L. $(LD_FLAGS) -lnsusers
 
 run:
