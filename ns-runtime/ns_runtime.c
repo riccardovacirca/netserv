@@ -1719,8 +1719,7 @@ ns_http_response_t* ns_http_response_alloc(apr_pool_t *mp) {
   return result;
 }
 
-void ns_http_response_header_set(ns_http_response_t *r,
-                                 const char *k, const char *v) {
+void ns_http_response_hd_set(ns_http_response_t *r, const char *k, const char *v) {
   if (r && k && v) {
     apr_table_set(r->headers, k, v);
   }
@@ -1732,7 +1731,8 @@ const char *ns_http_response_header_get(ns_http_response_t *r, const char *k) {
 
 const char *ns_http_response_headers_serialize(ns_http_response_t *r) {
   const char *result = NULL;
-  while (r) {
+  do {
+    if (!r) break;
     int nelts = ns_table_nelts(r->headers);
     if (nelts <= 0) break;
     apr_table_entry_t *e;
@@ -1745,8 +1745,7 @@ const char *ns_http_response_headers_serialize(ns_http_response_t *r) {
         result = apr_pstrcat(r->pool, result, h, NULL);
       }
     }
-    break;
-  }
+  } while(0);
   return result;
 }
 
@@ -1871,6 +1870,7 @@ char *ns_hmac_encode(const char *key, const char *s, apr_size_t sz) {
   if (key && s && sz) {
     unsigned int hmac_len;
     unsigned char hmac[EVP_MAX_MD_SIZE];
+    HMAC(EVP_sha256(), key, strlen(key), (const unsigned char*)s, sz, hmac, &hmac_len);
     HMAC(EVP_sha256(), key, strlen(key), (const unsigned char*)s, sz, hmac, &hmac_len);
     result = ns_jwt_base64_encode(hmac, hmac_len);
   }

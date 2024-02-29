@@ -674,7 +674,7 @@ static void ns_http_request_handler(struct mg_connection *c,
       }
 
       // Default response HTTP header Content-Type
-      ns_http_response_header_set(sv->response, "Content-Type", "text/plain");
+      ns_http_response_hd_set(sv->response, "Content-Type", "text/plain");
       if (DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP response Content-Type defined");
       }
@@ -721,7 +721,7 @@ static void ns_http_request_handler(struct mg_connection *c,
 
       // Response headers
       const char *http_hd;
-      http_hd = ns_http_response_headers_serialize(sv->response);
+      http_hd = ns_http_response_hd_serialize(sv->response);
       st.flag.resp_headers = http_hd != NULL;
       if ((st.error = !st.flag.resp_headers)) {
         break;
@@ -735,7 +735,7 @@ static void ns_http_request_handler(struct mg_connection *c,
       if (sv->response->status != 200) {
         // Not 200 OK response
         const char *ctype;
-        ctype = ns_http_response_header_get(sv->response, "Content-Type");
+        ctype = ns_http_response_hd_get(sv->response, "Content-Type");
         if (ctype) {
           ctype = apr_psprintf(st.pool, "Content-Type: %s\r\n", ctype);
         }

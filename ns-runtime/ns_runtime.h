@@ -285,9 +285,9 @@ typedef struct ns_http_response_t {
 } ns_http_response_t;
 
 ns_http_response_t* ns_http_response_alloc(apr_pool_t *mp);
-const char* ns_http_response_headers_serialize(ns_http_response_t *r);
-void ns_http_response_header_set(ns_http_response_t *r, const char *k, const char *v);
-const char* ns_http_response_header_get(ns_http_response_t *r, const char *k);
+const char* ns_http_response_hd_serialize(ns_http_response_t *r);
+void ns_http_response_hd_set(ns_http_response_t *r, const char *k, const char *v);
+const char* ns_http_response_hd_get(ns_http_response_t *r, const char *k);
 void ns_http_response_buffer_set(ns_http_response_t *r, void *buf, apr_size_t sz);
 
 /*
@@ -323,15 +323,15 @@ void ns_printf(ns_service_t *sv, const char *fmt, ...);
 
 #define ns_download(s, buf, sz, f, enc) \
   do {\
-    ns_http_response_header_set(s->response, "Expires", "Mon, 23 Oct 1972 16:00:00 GMT");\
-    ns_http_response_header_set(s->response, "Pragma", "hack");\
-    ns_http_response_header_set(s->response, "Cache-Control", "must-revalidate,post-check=0,pre-check=0");\
-    ns_http_response_header_set(s->response, "Cache-Control", "private");\
-    ns_http_response_header_set(s->response, "Content-Description", "File Transfer");\
-    ns_http_response_header_set(s->response, "Content-Disposition", apr_psprintf(s->pool, "attachment; filename=%s", f));\
-    ns_http_response_header_set(s->response, "Content-Transfer-Encoding", enc);\
-    /*ns_http_response_header_set(s, "Content-Length", apr_psprintf(s->pool, "%" APR_UINT64_T_FMT, sz));*/\
-    ns_http_response_header_set(s->response, "Content-Type", "application/download");\
+    ns_http_response_hd_set(s->response, "Expires", "Mon, 23 Oct 1972 16:00:00 GMT");\
+    ns_http_response_hd_set(s->response, "Pragma", "hack");\
+    ns_http_response_hd_set(s->response, "Cache-Control", "must-revalidate,post-check=0,pre-check=0");\
+    ns_http_response_hd_set(s->response, "Cache-Control", "private");\
+    ns_http_response_hd_set(s->response, "Content-Description", "File Transfer");\
+    ns_http_response_hd_set(s->response, "Content-Disposition", apr_psprintf(s->pool, "attachment; filename=%s", f));\
+    ns_http_response_hd_set(s->response, "Content-Transfer-Encoding", enc);\
+    /*ns_http_response_hd_set(s, "Content-Length", apr_psprintf(s->pool, "%" APR_UINT64_T_FMT, sz));*/\
+    ns_http_response_hd_set(s->response, "Content-Type", "application/download");\
     ns_http_response_buffer_set(s->response, (void*)buf, sz);\
   } while (0)
 
