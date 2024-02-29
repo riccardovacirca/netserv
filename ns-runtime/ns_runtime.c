@@ -1725,11 +1725,11 @@ void ns_http_response_hd_set(ns_http_response_t *r, const char *k, const char *v
   }
 }
 
-const char *ns_http_response_header_get(ns_http_response_t *r, const char *k) {
+const char *ns_http_response_hd_get(ns_http_response_t *r, const char *k) {
   return r && k ? apr_table_get(r->headers, k) : NULL;
 }
 
-const char *ns_http_response_headers_serialize(ns_http_response_t *r) {
+const char *ns_http_response_hd_serialize(ns_http_response_t *r) {
   const char *result = NULL;
   do {
     if (!r) break;
