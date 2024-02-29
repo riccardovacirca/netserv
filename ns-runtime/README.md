@@ -1,2 +1,2 @@
 # ns-runtime
-Lightweight microservices runtime library
+Lightweight HTTP microservices runtime library

@@ -2,7 +2,7 @@
 #include "ns_runtime.h"
 
 #ifndef DEBUG
-#define DEBUG 0
+#define DEBUG 1
 #endif
 
 #define true 1
@@ -49,11 +49,20 @@ int SignInModel(ns_service_t *s, void **res, apr_table_t *args)
   }
 
   if (resultset) {
+        printf("test11\n");
+
     apr_table_t *claims = APR_ARRAY_IDX(resultset, 0, apr_table_t*);
     if (claims != NULL) {
+              printf("test22\n");
+
       *res = ns_jwt_token_create(s->pool, claims, JWT_SECRET_KEY);
+    } else {
+      ns_log(s->logger, "ERROR", "JWT claims failure");
     }
-  }
+  } else {
+        printf("test222\n");
+      ns_log(s->logger, "ERROR", "DBD resultset failure");
+    }
 
   return *res != NULL;
 }
@@ -170,12 +179,16 @@ int SignInController(ns_service_t *s)
     const char ctype[] = "application/json";
     ns_http_response_header_set(s->response, "Content-Type", ctype);
 
+    printf("test1\n");
+
+
     apr_table_t *args;
     args = ns_http_request_validate_args(s->request, SignInRequestValidator, 2);
     st.flag.args = (args != NULL) && (ns_table_nelts(args) == 2);
     if ((st.error = !st.flag.args)) {
       break;
     }
+    printf("test2\n");
 
     int n = 0;
     if (s->request->args) {
@@ -185,11 +198,13 @@ int SignInController(ns_service_t *s)
     const char *tok;
     st.flag.token = SignInModel(s, (void*)(&tok), args);
     if ((st.error = !st.flag.token)) {
+          printf("test3\n");
+
       break;
     }
+    printf("test4\n");
 
     const char *cookies;
-    //const char *token = ns_str_replace(s->pool, (const char*)tok, "\"", "\\\"");
     cookies = apr_psprintf(s->pool, "access_token=%s Path=/", (const char*)tok);
     ns_http_response_header_set(s->response, "Set-Cookie", cookies);
     ns_printf(s, JSON_RESPONSE, "false", "null", "true");
@@ -362,7 +377,6 @@ void ns_handler(ns_service_t *s)
   ns_route(s, "POST", "/api/sign-in", SignInController);
   ns_route(s, "POST", "/api/sign-up", SignUpController);
   ns_authorized_routes(s, authorize_route) {
-    printf("test1\n");
     ns_route(s, "GET", "/api/user-data", UserController);
     ns_route(s, "GET", "/api/users-list", UsersListController);
   }

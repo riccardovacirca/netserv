@@ -1,5 +1,3 @@
-// MIT License
-// Copyright (c) 2024 Riccardo Vacirca <rvacirca23@gmail.com>
 
 #ifndef NS_RUNTIME_H
 #define NS_RUNTIME_H
@@ -42,7 +40,6 @@
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/hmac.h>
-
 
 #ifdef __cplusplus
 extern "C" {

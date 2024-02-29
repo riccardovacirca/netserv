@@ -653,7 +653,7 @@ static void ns_http_request_handler(struct mg_connection *c,
       
       // Authorization
       {
-        char user[100] = {0}, pass[100] = {0};
+        char user[256] = {0}, pass[256] = {0};
         mg_http_creds(st.hm, user, sizeof(user), pass, sizeof(pass));
         if (strlen(user) > 0) {
           sv->request->username = apr_pstrdup(st.pool, user);
@@ -812,8 +812,6 @@ static void ns_http_request_handler(struct mg_connection *c,
     }
     apr_terminate();
   }
-
-//  (void)fn_data;
 }
 
 /**
