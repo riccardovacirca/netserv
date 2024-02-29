@@ -1892,7 +1892,6 @@ char *ns_jwt_token_create(apr_pool_t *mp, apr_table_t *claims, const char *key) 
     enc_claims = ns_jwt_base64_encode((const unsigned char*)claims_str, strlen(claims_str));
   }
   if (enc_claims) {
-    printf("cod1: %s %s\n", key, enc_claims);
     enc_hmac = ns_hmac_encode(key, enc_claims, strlen(enc_claims));
   }
   if (enc_hmac) {
@@ -1916,10 +1915,7 @@ int ns_jwt_token_validate(apr_pool_t *mp, const char *tok, const char *key) {
     enc_hmac = APR_ARRAY_IDX(tok_ar, 2, const char*);
   }
   if (enc_hmac) {
-    printf("cod2: %s %s\n", key, enc_claims);
     gen_hmac = (const char*)ns_hmac_encode(key, enc_claims, strlen(enc_claims));
-    printf("enc_hmac: %s\n", enc_hmac);
-    printf("gen_hmac: %s\n", gen_hmac);
   }
   if (gen_hmac) {
     result = (int)(strcmp(enc_hmac, gen_hmac) == 0);

@@ -19,11 +19,6 @@
 
 int authorize_route(ns_service_t *s)
 {
-  if(s
-    && s->request
-    && s->request->password)
-      printf("%s\n", s->request->password);
-
   return s
     && s->request
     && s->request->password
@@ -47,23 +42,12 @@ int SignInModel(ns_service_t *s, void **res, apr_table_t *args)
   if (s->dbd) {
     resultset = (void*)ns_dbd_prepared_select(s->pool, s->dbd, sql, args);
   }
-
   if (resultset) {
-        printf("test11\n");
-
     apr_table_t *claims = APR_ARRAY_IDX(resultset, 0, apr_table_t*);
     if (claims != NULL) {
-              printf("test22\n");
-
       *res = ns_jwt_token_create(s->pool, claims, JWT_SECRET_KEY);
-    } else {
-      ns_log(s->logger, "ERROR", "JWT claims failure");
     }
-  } else {
-        printf("test222\n");
-      ns_log(s->logger, "ERROR", "DBD resultset failure");
-    }
-
+  }
   return *res != NULL;
 }
 
@@ -179,16 +163,12 @@ int SignInController(ns_service_t *s)
     const char ctype[] = "application/json";
     ns_http_response_hd_set(s->response, "Content-Type", ctype);
 
-    printf("test1\n");
-
-
     apr_table_t *args;
     args = ns_http_request_validate_args(s->request, SignInRequestValidator, 2);
     st.flag.args = (args != NULL) && (ns_table_nelts(args) == 2);
     if ((st.error = !st.flag.args)) {
       break;
     }
-    printf("test2\n");
 
     int n = 0;
     if (s->request->args) {
@@ -198,17 +178,13 @@ int SignInController(ns_service_t *s)
     const char *tok;
     st.flag.token = SignInModel(s, (void*)(&tok), args);
     if ((st.error = !st.flag.token)) {
-          printf("test3\n");
-
       break;
     }
-    printf("test4\n");
 
     const char *cookies;
     cookies = apr_psprintf(s->pool, "access_token=%s Path=/", (const char*)tok);
     ns_http_response_hd_set(s->response, "Set-Cookie", cookies);
     ns_printf(s, JSON_RESPONSE, "false", "null", "true");
-
   } while (0);
 
   if (st.error) {
