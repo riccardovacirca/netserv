@@ -98,7 +98,7 @@ int SignUpController(ns_service_t *s)
   
   do {
     const char ctype[] = "application/json";
-    ns_http_response_header_set(s->response, "Content-Type", ctype);
+    ns_http_response_hd_set(s->response, "Content-Type", ctype);
 
     apr_table_t *args;
     args = ns_http_request_validate_args(s->request, SignUpRequestValidator, 2);
@@ -168,7 +168,7 @@ int SignInController(ns_service_t *s)
 
   do {
     const char ctype[] = "application/json";
-    ns_http_response_header_set(s->response, "Content-Type", ctype);
+    ns_http_response_hd_set(s->response, "Content-Type", ctype);
 
     apr_table_t *args;
     args = ns_http_request_validate_args(s->request, SignInRequestValidator, 2);
@@ -191,7 +191,7 @@ int SignInController(ns_service_t *s)
     const char *cookies;
     //const char *token = ns_str_replace(s->pool, (const char*)tok, "\"", "\\\"");
     cookies = apr_psprintf(s->pool, "access_token=%s Path=/", (const char*)tok);
-    ns_http_response_header_set(s->response, "Set-Cookie", cookies);
+    ns_http_response_hd_set(s->response, "Set-Cookie", cookies);
     ns_printf(s, JSON_RESPONSE, "false", "null", "true");
 
   } while (0);
@@ -236,7 +236,7 @@ int UsersListController(ns_service_t *s)
 
     // Sets the value of the Content-Type in the response header
     const char ctype[] = "application/json";
-    ns_http_response_header_set(s->response, "Content-Type", ctype);
+    ns_http_response_hd_set(s->response, "Content-Type", ctype);
 
     // Retrieves the list of users
     st.flag.list = UsersListModel(s, (void*)(&st.list), NULL);
@@ -304,7 +304,7 @@ int UserController(ns_service_t *s)
   do {
     // Sets the value of the Content-Type in the response header
     const char ctype[] = "application/json";
-    ns_http_response_header_set(s->response, "Content-Type", ctype);
+    ns_http_response_hd_set(s->response, "Content-Type", ctype);
 
 
 

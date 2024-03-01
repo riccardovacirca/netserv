@@ -1734,20 +1734,20 @@ ns_http_response_t* ns_http_response_alloc(apr_pool_t *mp) {
   return r;
 }
 
-void ns_http_response_header_set(ns_http_response_t *r,
-                                 const char *k, const char *v) {
+void ns_http_response_hd_set(ns_http_response_t *r, const char *k, const char *v) {
   if (r && k && v) {
     apr_table_set(r->headers, k, v);
   }
 }
 
-const char* ns_http_response_header_get(ns_http_response_t *r, const char *k) {
+const char* ns_http_response_hd_get(ns_http_response_t *r, const char *k) {
   return r && k ? apr_table_get(r->headers, k) : NULL;
 }
 
-const char* ns_http_response_headers_serialize(ns_http_response_t *r) {
+const char* ns_http_response_hd_serialize(ns_http_response_t *r) {
   const char *result = NULL;
-  while (r) {
+  do {
+    if (!r) break;
     int nelts = ns_table_nelts(r->headers);
     if (nelts <= 0) break;
     apr_table_entry_t *e;
@@ -1760,8 +1760,7 @@ const char* ns_http_response_headers_serialize(ns_http_response_t *r) {
         result = apr_pstrcat(r->pool, result, h, NULL);
       }
     }
-    break;
-  }
+  } while(0);
   return result;
 }
 
@@ -1797,13 +1796,13 @@ ns_service_t* ns_alloc(apr_pool_t *mp) {
 }
 
 void ns_route(ns_service_t *s, const char *mth, const char *uri, ns_route_t fn) {
-  while (s && mth && uri && fn) {
+  do {
+    if (!s || !mth || !uri || !fn) break;
     if (s->response->status) break;
     if (strcmp(s->request->method, mth)) break;
     if (strcmp(s->request->uri, uri)) break;
     s->response->status = fn(s);
-    break;
-  }
+  } while(0);
 }
 
 void ns_printf(ns_service_t *s, const char *fmt, ...) {
@@ -1882,7 +1881,7 @@ char* ns_hmac_encode(const char *key, const char *s, apr_size_t sz) {
   if (key && s && sz) {
     unsigned int hmac_len;
     unsigned char hmac[EVP_MAX_MD_SIZE];
-    HMAC(EVP_sha256(), key, strlen(key), (const unsigned char *)s, sz, hmac, &hmac_len);
+    HMAC(EVP_sha256(), key, strlen(key), (const unsigned char*)s, sz, hmac, &hmac_len);
     result = ns_jwt_base64_encode(hmac, hmac_len);
   }
   return result;
@@ -1890,7 +1889,8 @@ char* ns_hmac_encode(const char *key, const char *s, apr_size_t sz) {
 
 char* ns_jwt_token_create(apr_pool_t *mp, apr_table_t *claims, const char *key) {
   char *result = NULL;
-  while (mp && claims && key) {
+  do {
+    if (!mp || !claims || !key) break;
     const char *claims_str;
     claims_str = ns_json_encode(mp, claims, NS_JSON_T_TABLE);
     if (!claims_str) break;
@@ -1904,14 +1904,14 @@ char* ns_jwt_token_create(apr_pool_t *mp, apr_table_t *claims, const char *key) 
     if (!enc_hmac) break;
     result = apr_psprintf(mp, "%s.%s.%s", head, enc_claims, enc_hmac);
     free(enc_hmac);
-    break;
-  }
+  } while (0);
   return result;
 }
 
 int ns_jwt_token_validate(apr_pool_t *mp, const char *tok, const char *key) {
   int result = 0;
-  while (mp && tok && key) {
+  do {
+    if (!mp || !tok || !key) break;
     apr_array_header_t *tok_ar = ns_split(mp, tok, ".");
     if (!tok_ar) break;
     const char *claims = APR_ARRAY_IDX(tok_ar, 1, const char*);
@@ -1922,7 +1922,6 @@ int ns_jwt_token_validate(apr_pool_t *mp, const char *tok, const char *key) {
     gen_hmac = (const char*)ns_hmac_encode(key, claims, strlen(claims));
     if (!gen_hmac) break;
     result = (int)(strcmp(enc_hmac, gen_hmac) == 0);
-    break;
-  }
+  } while (0);
   return result;
 }
