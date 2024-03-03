@@ -1,0 +1,9 @@
+#!/bin/bash
+chown -R root:root /usr/bin/{NAME}
+systemctl daemon-reload
+systemctl enable {NAME}_{PORT_1}.service
+systemctl start {NAME}_{PORT_1}.service
+systemctl enable {NAME}_{PORT_2}.service
+systemctl start {NAME}_{PORT_2}.service
+systemctl enable {NAME}_{PORT_3}.service
+systemctl start {NAME}_{PORT_3}.service

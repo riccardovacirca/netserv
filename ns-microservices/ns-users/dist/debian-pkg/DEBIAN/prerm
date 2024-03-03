@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+if systemctl is-active {NAME}_{PORT_1}.service >/dev/null; then
+  systemctl stop {NAME}_{PORT_1}.service
+fi
+if systemctl is-active {NAME}_{PORT_2}.service >/dev/null; then
+  systemctl stop {NAME}_{PORT_2}.service
+fi
+if systemctl is-active {NAME}_{PORT_3}.service >/dev/null; then
+  systemctl stop {NAME}_{PORT_3}.service
+fi
+exit 0

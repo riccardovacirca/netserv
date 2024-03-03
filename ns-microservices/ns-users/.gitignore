@@ -1,8 +1,5 @@
-*
-!.gitignore
-!README.md
-!LICENSE
-!Makefile
-!nsusers.c
-!nsusers.sql
-!nsusers.service
+*.so
+*.deb
+*.txt
+*.log
+nsusers
