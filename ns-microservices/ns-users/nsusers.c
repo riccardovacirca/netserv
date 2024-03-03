@@ -2,7 +2,9 @@
 #include "ns_runtime.h"
 
 #ifndef DEBUG
-#define DEBUG 1
+#define NS_DEBUG 0
+#else
+#define NS_DEBUG 1
 #endif
 
 #define true 1

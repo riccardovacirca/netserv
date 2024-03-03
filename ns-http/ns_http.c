@@ -16,20 +16,25 @@
 #include "sys/file.h"
 #include "string.h"
 #include "signal.h"
-
 #include "mongoose.h"
 #include "ns_runtime.h"
 
 #ifndef DEBUG
-#define DEBUG 0
+#define NS_DEBUG 0
+#else
+#define NS_DEBUG 1
 #endif
 
 #ifndef MONGOOSE_DISABLED
-#define MONGOOSE_DISABLED 0
+#define NS_MONGOOSE_DISABLED 0
+#else
+#define NS_MONGOOSE_DISABLED 1
 #endif
 
 #ifndef DAEMONIZED
-#define DAEMONIZED 0
+#define NS_DAEMONIZED 0
+#else
+#define NS_DAEMONIZED 1
 #endif
 
 /**
@@ -86,8 +91,7 @@ typedef struct ns_server_t {
  * @param mp Memory pool
  * @return ns_server_t* Instance of the global state of the server
  */
-static ns_server_t* ns_server_alloc(apr_pool_t *mp)
-{
+static ns_server_t* ns_server_alloc(apr_pool_t *mp) {
   ns_server_t *s;
   s = (ns_server_t*)apr_palloc(mp, sizeof(ns_server_t));
   if (s != NULL) {
@@ -111,8 +115,7 @@ static ns_server_t* ns_server_alloc(apr_pool_t *mp)
  * 
  * @param s Global state of the server
  */
-static void ns_server_destroy(ns_server_t *s)
-{
+static void ns_server_destroy(ns_server_t *s) {
   if (s && s->pool) {
     if (s->logger) {
       if (s->logger->mutex) {
@@ -131,8 +134,7 @@ static void ns_server_destroy(ns_server_t *s)
  * @param mp Memory pool
  * @return int The result of allocation
  */
-static int ns_dbd_pool_alloc(apr_pool_t *mp)
-{
+static int ns_dbd_pool_alloc(apr_pool_t *mp) {
   dbd_pool = (ns_dbd_pool_t*)apr_palloc(mp, sizeof(ns_dbd_pool_t));
   return dbd_pool != NULL;
 }
@@ -148,8 +150,7 @@ static int ns_dbd_pool_alloc(apr_pool_t *mp)
  * @param drv Database server driver in use
  * @param conn_s Connection string with the database server in use
  */
-static void ns_dbd_pool_add(apr_pool_t *mp, const char *drv, const char *conn_s)
-{
+static void ns_dbd_pool_add(apr_pool_t *mp, const char *drv, const char *conn_s) {
   ns_dbd_t *dbd = ns_dbd_alloc(mp);
   if (dbd != NULL) {
     if (ns_dbd_open(mp, dbd, drv, conn_s)) {
@@ -170,8 +171,7 @@ static void ns_dbd_pool_add(apr_pool_t *mp, const char *drv, const char *conn_s)
  * @param conn_s DBD connection string
  * @return int DBD connections status
  */
-static int ns_dbd_pool_init(apr_pool_t *mp, const char *drv, const char *conn_s)
-{
+static int ns_dbd_pool_init(apr_pool_t *mp, const char *drv, const char *conn_s) {
   int result = 0;
   if (dbd_pool != NULL) {
     dbd_pool->counter = -1;
@@ -200,8 +200,7 @@ static int ns_dbd_pool_init(apr_pool_t *mp, const char *drv, const char *conn_s)
  * 
  * @return ns_dbd_t* Data structure associated with the open connection
  */
-static ns_dbd_t* ns_dbd_pool_get()
-{
+static ns_dbd_t* ns_dbd_pool_get() {
   ns_dbd_t *dbd = NULL;
   apr_status_t rv = apr_proc_mutex_lock(dbd_pool->mutex);
   if (rv == APR_SUCCESS) {
@@ -222,8 +221,7 @@ static ns_dbd_t* ns_dbd_pool_get()
  * Uses the mutex for exclusive access to the connection pool
  * Increments the counter of available connections
  */
-static void ns_dbd_pool_release()
-{
+static void ns_dbd_pool_release() {
   if (dbd_pool != NULL && dbd_pool->connections != NULL) {
     apr_status_t rv = apr_proc_mutex_lock(dbd_pool->mutex);
     if (rv == APR_SUCCESS) {
@@ -237,8 +235,7 @@ static void ns_dbd_pool_release()
   }
 }
 
-static void ns_dbd_pool_destroy()
-{
+static void ns_dbd_pool_destroy() {
   if (dbd_pool != NULL) {
     apr_status_t rv = apr_proc_mutex_lock(dbd_pool->mutex);
     if (rv == APR_SUCCESS) {
@@ -263,8 +260,7 @@ static void ns_dbd_pool_destroy()
  * @param hm Data structure associated with the HTTP message
  */
 static void ns_http_request_headers_set(apr_pool_t *mp, ns_http_request_t *rq,
-                                        struct mg_http_message *hm)
-{
+                                        struct mg_http_message *hm) {
   apr_table_t *headers = NULL;
   size_t i, max = sizeof(hm->headers) / sizeof(hm->headers[0]);
   for (i = 0; i < max && hm->headers[i].name.len > 0; i++) {
@@ -300,8 +296,7 @@ static void ns_http_request_headers_set(apr_pool_t *mp, ns_http_request_t *rq,
  * @return apr_table_t* Table of key/value pairs or NULL in case of failure
  */
 static apr_table_t* ns_http_request_args_parse(apr_pool_t *mp, const char *s,
-                                               const char *sp1, const char *sp2)
-{
+                                               const char *sp1, const char *sp2) {
   apr_table_t *result = NULL;
   if (mp && s && sp1 && sp2) {
     apr_array_header_t *ar = ns_split(mp, s, sp1);
@@ -338,8 +333,7 @@ static apr_table_t* ns_http_request_args_parse(apr_pool_t *mp, const char *s,
  * @return apr_table_t* Table of key/value pairs or NULL in case of failure
  */
 static apr_table_t* ns_http_request_cookies_parse(apr_pool_t *mp,
-                                                  struct mg_http_message *hm)
-{
+                                                  struct mg_http_message *hm) {
   apr_table_t *result = NULL;
   struct mg_str *cookies = mg_http_get_header(hm, "Cookie");
   if (cookies != NULL) {
@@ -356,8 +350,7 @@ static apr_table_t* ns_http_request_cookies_parse(apr_pool_t *mp,
  * @return apr_table_t* Table of key/value pairs or NULL in case of failure
  */
 static apr_table_t* ns_http_query_string_parse(apr_pool_t*mp,
-                                               struct mg_http_message *hm)
-{
+                                               struct mg_http_message *hm) {
   apr_table_t *result = NULL;
   if (hm->query.len > 0) {
     const char *query = ns_str(mp, hm->query.ptr, hm->query.len);
@@ -374,8 +367,7 @@ static apr_table_t* ns_http_query_string_parse(apr_pool_t*mp,
  * @return apr_table_t* Table of key/value pairs or NULL in case of failure
  */
 static apr_table_t* ns_http_request_body_parse(apr_pool_t*mp,
-                                               struct mg_http_message *hm)
-{
+                                               struct mg_http_message *hm) {
   apr_table_t *result = NULL;
   if (hm->body.len > 0) {
     const char *body = ns_str(mp, hm->body.ptr, hm->body.len);
@@ -389,8 +381,7 @@ static apr_table_t* ns_http_request_body_parse(apr_pool_t*mp,
  * 
  * @param signum Integer value associated with the signal
  */
-static void ns_signal_exit(int signum)
-{
+static void ns_signal_exit(int signum) {
   if (signum == SIGTERM || signum == SIGINT) {
     server_run = 0;
   }
@@ -402,8 +393,7 @@ static void ns_signal_exit(int signum)
  * @param sig_action Data structure associated with the signal
  * @param cb Callback function invoked upon handling the managed signals
  */
-static void ns_signal_handler(struct sigaction *sig_action, sighd_t cb)
-{
+static void ns_signal_handler(struct sigaction *sig_action, sighd_t cb) {
   sig_action->sa_handler = cb;
   sigemptyset(&sig_action->sa_mask);
   sig_action->sa_flags = 0;
@@ -422,8 +412,7 @@ static void ns_signal_handler(struct sigaction *sig_action, sighd_t cb)
  */
 static int ns_http_request_multipart_parse(apr_pool_t *mp, ns_http_request_t *rq,
                                            struct mg_connection *c,
-                                           struct mg_http_message *hm)
-{
+                                           struct mg_http_message *hm) {
   char *err;
   apr_size_t fsize;
   const char *fname, *forig, *fpath;
@@ -470,8 +459,7 @@ static int ns_http_request_multipart_parse(apr_pool_t *mp, ns_http_request_t *rq
  * @param fn_data Global server state
  */
 static void ns_http_request_handler(struct mg_connection *c,
-                                    int ev, void *ev_data)
-{
+                                    int ev, void *ev_data) {
   struct state_t {
     struct flag_t {
       int ev_data, fn_data, init, pool, logger, request, method, uri, query,
@@ -510,7 +498,7 @@ static void ns_http_request_handler(struct mg_connection *c,
 
       // Server data
       st.server = (ns_server_t*)c->fn_data;
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "Client connected");
       }
 
@@ -523,7 +511,7 @@ static void ns_http_request_handler(struct mg_connection *c,
         if ((st.error = !st.flag.init)) {
           break;
         }
-        if (DEBUG) {
+        if (NS_DEBUG) {
           ns_log((st.server)->logger, "INFO", "Service APR initialized");
         }
 
@@ -533,7 +521,7 @@ static void ns_http_request_handler(struct mg_connection *c,
         if ((st.error = !st.flag.pool)) {
           break;
         }
-        if (DEBUG) {
+        if (NS_DEBUG) {
           ns_log((st.server)->logger, "INFO", "Service pool created");
         }
       }
@@ -544,7 +532,7 @@ static void ns_http_request_handler(struct mg_connection *c,
       if ((st.error = !st.flag.service)) {
         break;
       }
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "Service data struct allocated");
       }
 
@@ -554,7 +542,7 @@ static void ns_http_request_handler(struct mg_connection *c,
       if ((st.error = !st.flag.logger)) {
         break;
       }
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "Service logger initialized");
       }
 
@@ -564,13 +552,13 @@ static void ns_http_request_handler(struct mg_connection *c,
       if ((st.error = !st.flag.request)) {
         break;
       }
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "Service HTTP request allocated");
       }
 
       // Request headers
       ns_http_request_headers_set(st.pool, sv->request, st.hm);
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP request headers parsed");
       }
 
@@ -581,7 +569,7 @@ static void ns_http_request_handler(struct mg_connection *c,
       }
       sv->request->method = ns_str(st.pool, (st.hm)->method.ptr,
                                   (st.hm)->method.len);
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP request method parsed");
       }
 
@@ -591,7 +579,7 @@ static void ns_http_request_handler(struct mg_connection *c,
         break;
       }
       sv->request->uri = ns_str(st.pool, (st.hm)->uri.ptr, (st.hm)->uri.len);
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP request uri parsed");
       }
 
@@ -606,7 +594,7 @@ static void ns_http_request_handler(struct mg_connection *c,
           }
           sv->request->args = ns_http_query_string_parse(sv->pool, st.hm);
           if (sv->request->args) {
-            if (DEBUG) {
+            if (NS_DEBUG) {
               ns_log((st.server)->logger, "INFO", "HTTP query string parsed");
             }
           }
@@ -625,7 +613,7 @@ static void ns_http_request_handler(struct mg_connection *c,
         }
         sv->request->args = ns_http_request_body_parse(sv->pool, st.hm);
         if (sv->request->args) {
-          if (DEBUG) {
+          if (NS_DEBUG) {
             ns_log((st.server)->logger, "INFO", "HTTP body parsed");
           }
         }
@@ -643,7 +631,7 @@ static void ns_http_request_handler(struct mg_connection *c,
           if ((st.error = !st.flag.multipart)) {
             break;
           }
-          if (DEBUG) {
+          if (NS_DEBUG) {
             ns_log((st.server)->logger, "INFO", "HTTP request multipart parsed");
           }
         } else {
@@ -669,19 +657,19 @@ static void ns_http_request_handler(struct mg_connection *c,
       if ((st.error = !st.flag.response)) {
         break;
       }
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP response allocated");
       }
 
       // Default response HTTP header Content-Type
       ns_http_response_hd_set(sv->response, "Content-Type", "text/plain");
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP response Content-Type defined");
       }
 
       // DBD connection
       if ((st.server)->dbd_driver && (st.server)->dbd_conn_s) {
-        if (DEBUG) {
+        if (NS_DEBUG) {
           ns_log((st.server)->logger, "INFO", "DBD connection configured");
         }
         sv->dbd = ns_dbd_pool_get();
@@ -689,14 +677,14 @@ static void ns_http_request_handler(struct mg_connection *c,
         if ((st.error = !st.flag.dbd)) {
           break;
         }
-        if (DEBUG) {
+        if (NS_DEBUG) {
           ns_log((st.server)->logger, "INFO", "DBD connection opened");
         }
         st.flag.dbd_handler = sv->dbd->drv != NULL && sv->dbd->hdl != NULL;
         if ((st.error = !st.flag.dbd_handler)) {
           break;
         }
-        if (DEBUG) {
+        if (NS_DEBUG) {
           ns_log((st.server)->logger, "INFO", "DBD handler initialized.");
         }
       }
@@ -710,12 +698,12 @@ static void ns_http_request_handler(struct mg_connection *c,
       if ((st.error = !st.flag.handler)) {
         break;
       }
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "Service handler executed.");
       }
 
       ns_dbd_pool_release();
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "DBD connection released.");
       }
 
@@ -823,9 +811,7 @@ static void ns_http_request_handler(struct mg_connection *c,
  * @param er_msg Error message
  * @return int 1 on success, otherwise 0
  */
-static int ns_cmd_args_parse(ns_server_t *s, int argc, char *argv[],
-                             char **er_msg)
-{
+static int ns_cmd_args_parse(ns_server_t *s, int argc, char *argv[], char **er_msg) {
   struct state_t {
     struct flag_t {
       int input, arg_format, host, port, log_file;
@@ -906,8 +892,7 @@ static int ns_cmd_args_parse(ns_server_t *s, int argc, char *argv[],
  * @return int 1 on success, otherwise 0
  */
 static int ns_server_init(apr_pool_t *mp, ns_server_t **s, int argc,
-                          char *argv[], char **er_msg)
-{
+                          char *argv[], char **er_msg) {
   struct state_t {
     struct flag_t {
       int input, args, addr, mutex, logger;
@@ -980,8 +965,7 @@ static int ns_server_init(apr_pool_t *mp, ns_server_t **s, int argc,
 /**
  * Main function
  */
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   struct state_t {
     struct flag_t {
       int input, init, pool, server, dbd, dbd_pool;
@@ -1040,7 +1024,7 @@ int main(int argc, char **argv)
       break;
     }
 
-    if (DEBUG) {
+    if (NS_DEBUG) {
       ns_log((st.server)->logger, "INFO", "Server starting...");
       ns_log((st.server)->logger, "INFO", "Server initialized");
     }
@@ -1064,7 +1048,7 @@ int main(int argc, char **argv)
         break;
       }
 
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "DBD connection pool allocated");
       }
 
@@ -1074,26 +1058,26 @@ int main(int argc, char **argv)
         break;
       }
 
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "DBD connection pool initialized");
       }
     }
 
-    if (DAEMONIZED) {
+    if (NS_DAEMONIZED) {
       ns_daemonize();
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "Service daemonized");
       }
     }
 
-    if (!MONGOOSE_DISABLED) {
+    if (!NS_MONGOOSE_DISABLED) {
       mg_mgr_init(&(st.mgr));
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP server initialized");
       }
       mg_http_listen(&(st.mgr), (st.server)->addr,
                     ns_http_request_handler, (void*)(st.server));
-      if (DEBUG) {
+      if (NS_DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP server listening...");
       }
       while (server_run) {
