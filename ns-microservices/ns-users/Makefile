@@ -22,13 +22,13 @@ CFLAGS:=-std=gnu99
 INCLUDES:=-I. -I/usr/include -I/usr/include/apr-1.0 -I../../../mongoose
 LD_FLAGS:=-lapr-1 -laprutil-1 -lnsruntime -lcrypto
 
-all: lib$(NAME) release run
+all: lib$(NAME) debug run
 
 lib$(NAME):
 	$(CC) $(CFLAGS) -shared -fPIC -o \
 	lib$(NAME).so $(NAME).c $(INCLUDES) $(LD_FLAGS)
 
-service:
+debug:
 	$(CC) $(CFLAGS) \
 	-o $(NAME) ../../../mongoose/mongoose.c ../../ns-http/ns_http.c \
 	$(INCLUDES) -L. $(LD_FLAGS) -l$(NAME)
@@ -40,26 +40,23 @@ release:
 
 run:
 	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. \
-	./$(NAME) -h 0.0.0.0 -p 8081 -l ./$(NAME).log -d mysql \
-	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
-
-debug:
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. \
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
-	./$(NAME) -h 0.0.0.0 -p 8081 -l ./$(NAME).log -d mysql \
+	./$(NAME) -h 0.0.0.0 -p 2310 -l ./$(NAME).log -d mysql \
 	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
 
-sign-in:
-	curl -i -v -X POST -c /tmp/cookies.txt \
-	"http://localhost:8081/api/sign-in" -d "username=bob&password=secret"
-
-user-data:
+test:
+	@echo "\n\n"
+	curl -i -v -c /tmp/cookies.txt \
+	"http://localhost:2310/api/sign-in" -d "username=bob&password=secret"
+	@echo "\n\n"
 	curl -i -v -X GET -b /tmp/cookies.txt \
-	"http://localhost:8081/api/user-data?id=1"
-
-users-list:
+	"http://localhost:2310/api/user-data?id=1"
+	@echo "\n\n"
 	curl -i -v -X GET -b /tmp/cookies.txt \
-	"http://localhost:8081/api/users-list"
+	"http://localhost:2310/api/users-list"
+	@echo "\n\n"
+	@echo "done."
+	@echo
 
 depend:
 	@echo
@@ -69,6 +66,8 @@ depend:
 dist: lib$(NAME) release
 	mkdir -p /tmp/$(NAME)
 	cp -r dist/debian-pkg/* /tmp/$(NAME)
+	rm /tmp/$(NAME)/etc/systemd/system/.gitkeep
+	rm /tmp/$(NAME)/usr/bin/.gitkeep /tmp/$(NAME)/usr/lib/.gitkeep
 	sed -i 's/{NAME}/$(NAME)/g' /tmp/$(NAME)/DEBIAN/control
 	sed -i 's/{VERS}/$(VERS)/g' /tmp/$(NAME)/DEBIAN/control
 	sed -i 's/{DESC}/$(DESC)/g' /tmp/$(NAME)/DEBIAN/control
@@ -111,11 +110,11 @@ dist: lib$(NAME) release
 	sed -i 's/{CONN_S}/$(CONN_S_3)/g' /tmp/$(NAME)/etc/systemd/system/$(NAME)_$(PORT_3).service
 
 	dpkg-deb --build /tmp/$(NAME) ./$(NAME)-$(VERS)_amd64.deb
-#	rm -rf /tmp/$(NAME)
+	rm -rf /tmp/$(NAME)
 	@echo "done."
 	@echo
 
 clean:
 	rm -rf *.so *.log *.d $(NAME)
 
-.PHONY: all lib$(NAME) service run
+.PHONY: all lib$(NAME) debug release run depend dist clean
