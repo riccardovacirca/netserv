@@ -11,11 +11,12 @@ export const UsersListComponent = (entries:any[]) => ({entries});
 
 export const fetchUsersListSystem = async () => {
   try {
-    const resp = await fetch(`/api/users`);
+    const resp = await fetch(`http://192.168.1.5:2310/api/users-list`);
     if (!resp.ok) {throw new Error();}
     const data = await resp.json();
     return data; //UsersListComponent(data.entries);
   } catch (error) {
+    console.log(error);
     return null;
   }
 };
@@ -67,13 +68,3 @@ export const deleteUserDataSystem = async (user:any) => {
     return null;
   }
 };
-
-if (require.main === module) {
-  fetchUsersListSystem()
-    .then(data => {
-      console.log(data);
-    })
-    .catch(error => {
-      console.error('Error:', error);
-    });
-}

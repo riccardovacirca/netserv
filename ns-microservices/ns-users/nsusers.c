@@ -2,9 +2,9 @@
 #include "ns_runtime.h"
 
 #ifndef DEBUG
-#define NS_DEBUG 0
+#define DEBUG 0
 #else
-#define NS_DEBUG 1
+#define DEBUG 1
 #endif
 
 #define true 1
@@ -15,16 +15,20 @@
 /**
  * @brief Pattern of the response string
  */
-#define JSON_RESPONSE "{\"err\":%s,\"log\":%s,\"out\":%s}"
+#define JSON_RESPONSE_SUCCESS "{\"err\":0,\"log\":null,\"out\":%s}"
+#define JSON_RESPONSE_FAILURE "{\"err\":0,\"log\":\"%s\",\"out\":null}"
 
 // Helpers
 
 int authorize_route(ns_service_t *s)
 {
-  return s
-    && s->request
-    && s->request->password
-    && ns_jwt_token_validate(s->pool, s->request->password, JWT_SECRET_KEY);
+  int auth = s && s->request && s->request->password &&
+             ns_jwt_token_validate(s->pool, s->request->password, JWT_SECRET_KEY);
+  if (!auth) {
+    ns_printf(s, JSON_RESPONSE_FAILURE, "Unauthorized");
+    s->response->status = 200;
+  }
+  return auth;
 }
 
 // Models
@@ -114,7 +118,7 @@ int SignUpController(ns_service_t *s)
       break;
     }
 
-    ns_printf(s, JSON_RESPONSE, "false", "null", json);
+    ns_printf(s, JSON_RESPONSE_SUCCESS, json);
 
   } while (0);
 
@@ -128,9 +132,9 @@ int SignUpController(ns_service_t *s)
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
     if (er != NULL) {
-      ns_printf(s, JSON_RESPONSE, "true", er, "null");
+      ns_printf(s, JSON_RESPONSE_FAILURE, er);
     } else {
-      ns_printf(s, "%s\r\n", "An error occurred.");
+      ns_printf(s, JSON_RESPONSE_FAILURE, "An error occurred.");
     }
   }
 
@@ -186,7 +190,8 @@ int SignInController(ns_service_t *s)
     const char *cookies;
     cookies = apr_psprintf(s->pool, "access_token=%s Path=/", (const char*)tok);
     ns_http_response_hd_set(s->response, "Set-Cookie", cookies);
-    ns_printf(s, JSON_RESPONSE, "false", "null", "true");
+    ns_printf(s, JSON_RESPONSE_SUCCESS, "true");
+
   } while (0);
 
   if (st.error) {
@@ -199,9 +204,9 @@ int SignInController(ns_service_t *s)
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
     if (er != NULL) {
-      ns_printf(s, JSON_RESPONSE, "true", er, "null");
+      ns_printf(s, JSON_RESPONSE_FAILURE, er);
     } else {
-      ns_printf(s, "%s\r\n", "An error occurred.");
+      ns_printf(s, JSON_RESPONSE_FAILURE, "An error occurred.");
     }
   }
 
@@ -246,7 +251,7 @@ int UsersListController(ns_service_t *s)
     }
 
     // Sends the response to the client
-    ns_printf(s, JSON_RESPONSE, "false", "null", json);
+    ns_printf(s, JSON_RESPONSE_SUCCESS, json);
 
   } while (0);
 
@@ -260,9 +265,9 @@ int UsersListController(ns_service_t *s)
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
     if (er != NULL) {
-      ns_printf(s, JSON_RESPONSE, "true", er, "null");
+      ns_printf(s, JSON_RESPONSE_FAILURE, er);
     } else {
-      ns_printf(s, "%s\r\n", "An error occurred.");
+      ns_printf(s, JSON_RESPONSE_FAILURE, "An error occurred.");
     }
   }
 
@@ -299,9 +304,6 @@ int UserController(ns_service_t *s)
     const char ctype[] = "application/json";
     ns_http_response_hd_set(s->response, "Content-Type", ctype);
 
-
-
-
     // Performs validation of the request arguments
     apr_table_t *args;
     args = ns_http_request_validate_args(s->request, UserRequestValidator, 1);
@@ -325,7 +327,7 @@ int UserController(ns_service_t *s)
     }
 
     // Sends the response to the client
-    ns_printf(s, JSON_RESPONSE, "false", "null", json);
+    ns_printf(s, JSON_RESPONSE_SUCCESS, json);
 
   } while (0);
 
@@ -341,9 +343,9 @@ int UserController(ns_service_t *s)
       er = ns_json_encode(s->pool, "General error", NS_JSON_T_STRING);
     }
     if (er != NULL) {
-      ns_printf(s, JSON_RESPONSE, "true", er, "null");
+      ns_printf(s, JSON_RESPONSE_FAILURE, er);
     } else {
-      ns_printf(s, "%s\r\n", "An error occurred.");
+      ns_printf(s, JSON_RESPONSE_FAILURE, "An error occurred.");
     }
   }
 
@@ -354,8 +356,8 @@ void ns_handler(ns_service_t *s)
 {
   ns_route(s, "POST", "/api/sign-in", SignInController);
   ns_route(s, "POST", "/api/sign-up", SignUpController);
-  ns_authorized_routes(s, authorize_route) {
+  //ns_authorized_routes(s, authorize_route) {
     ns_route(s, "GET", "/api/user-data", UserController);
     ns_route(s, "GET", "/api/users-list", UsersListController);
-  }
+  //}
 }

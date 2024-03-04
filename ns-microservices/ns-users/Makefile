@@ -19,27 +19,31 @@ CONN_S_3:=host=127.0.0.1,port=3306,user=test,pass=test,dbname=test
 
 CC:=clang
 CFLAGS:=-std=gnu99
-INCLUDES:=-I. -I/usr/include -I/usr/include/apr-1.0 -I../../../mongoose
+INCLUDES:=-I. -I../../ns-runtime -I/usr/include -I/usr/include/apr-1.0 -I../../../mongoose
+LIBS:=-L. -L../../ns-runtime
 LD_FLAGS:=-lapr-1 -laprutil-1 -lnsruntime -lcrypto
 
-all: lib$(NAME) debug run
+all: runtime lib$(NAME) debug run
+
+runtime:
+	cd ../../ns-runtime && make
 
 lib$(NAME):
 	$(CC) $(CFLAGS) -shared -fPIC -o \
-	lib$(NAME).so $(NAME).c $(INCLUDES) $(LD_FLAGS)
+	lib$(NAME).so $(NAME).c $(INCLUDES) $(LIBS) $(LD_FLAGS)
 
 debug:
 	$(CC) $(CFLAGS) \
 	-o $(NAME) ../../../mongoose/mongoose.c ../../ns-http/ns_http.c \
-	$(INCLUDES) -L. $(LD_FLAGS) -l$(NAME)
+	$(INCLUDES) $(LIBS) $(LD_FLAGS) -l$(NAME)
 
 release:
 	$(CC) $(CFLAGS) -DDAEMONIZED \
 	-o $(NAME) ../../../mongoose/mongoose.c ../../ns-http/ns_http.c \
-	$(INCLUDES) -L. $(LD_FLAGS) -l$(NAME)
+	$(INCLUDES) $(LIBS) $(LD_FLAGS) -l$(NAME)
 
 run:
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. \
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:.:../../ns-runtime \
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
 	./$(NAME) -h 0.0.0.0 -p 2310 -l ./$(NAME).log -d mysql \
 	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
