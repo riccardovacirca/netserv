@@ -1,6 +1,6 @@
 
 NAME:=nsusers
-DESC:=Example HTTP microservice for user management
+DESC:=NetServ HTTP microservice for user management
 VERS:=0.0.1
 MANT:=Riccardo Vacirca<rvacirca23@gmail.com>
 HOME:=http:\/\/riccardovacirca.com
