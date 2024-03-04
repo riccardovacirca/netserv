@@ -1,2 +1,2 @@
 # ns-gateway
-Nginx API gateway for HTTP microservices
+NetServ API gateway configuration for Nginx

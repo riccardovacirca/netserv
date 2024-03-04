@@ -1,2 +1,2 @@
 # ns-users
-Example HTTP microservice for user management
+NetServ HTTP microservice for user management

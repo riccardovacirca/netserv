@@ -1,2 +1,2 @@
 # ns-hello
-Example HTTP HelloWorld microservice
+NetServ HTTP HelloWorld microservice
