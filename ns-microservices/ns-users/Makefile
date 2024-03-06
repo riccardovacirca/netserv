@@ -79,9 +79,8 @@ install:
 	cp $(NAME)_upstream.conf /etc/nginx/sites-available/$(NAME)_upstream.conf
 	ln -s /etc/nginx/sites-available/$(NAME)_location.conf /etc/nginx/sites-available/$(NAME)_location.conf
 	ln -s /etc/nginx/sites-available/$(NAME)_upstream.conf /etc/nginx/sites-available/$(NAME)_upstream.conf
-
-
-
+	nginx -t
+	service nginx restart
 
 dist: lib$(NAME) release
 	mkdir -p /tmp/$(NAME)
