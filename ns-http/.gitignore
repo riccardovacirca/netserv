@@ -1,7 +1,0 @@
-*
-!.gitignore
-!LICENSE
-!README.md
-!mongoose.c
-!mongoose.h
-!ns_http.c

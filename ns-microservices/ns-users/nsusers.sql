@@ -1,5 +1,3 @@
--- MIT License
--- Copyright (c) 2024 Riccardo Vacirca <rvacirca23@gmail.com>
 
 drop table if exists `users`;
 

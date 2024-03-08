@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 
 export const UserEntity = (id:number) => ({
-  id, components:[] as Object[]
+  id, components:[] as any[]
 });
 
 export const UserDataComponent = (

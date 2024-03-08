@@ -84,7 +84,7 @@ install:
 
 dist: lib$(NAME) release
 	mkdir -p /tmp/$(NAME)
-	cp -r dist/debian-pkg/* /tmp/$(NAME)
+	cp -r dist/debian/* /tmp/$(NAME)
 	rm /tmp/$(NAME)/etc/systemd/system/.gitkeep
 	rm /tmp/$(NAME)/usr/bin/.gitkeep /tmp/$(NAME)/usr/lib/.gitkeep
 	sed -i 's/{NAME}/$(NAME)/g' /tmp/$(NAME)/DEBIAN/control
