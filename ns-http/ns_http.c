@@ -5,6 +5,7 @@
 #include "apr_strings.h"
 #include "apr_proc_mutex.h"
 #include "apr_dbd.h"
+
 #include "stdio.h"
 #include "errno.h"
 #include "time.h"
@@ -16,26 +17,13 @@
 #include "sys/file.h"
 #include "string.h"
 #include "signal.h"
+
 #include "mongoose.h"
 #include "ns_runtime.h"
 
-#ifndef DEBUG
-#define DEBUG 0
-#else
-#define DEBUG 1
-#endif
-
-#ifndef MONGOOSE_DISABLED
-#define MONGOOSE_DISABLED 0
-#else
-#define MONGOOSE_DISABLED 1
-#endif
-
-#ifndef DAEMONIZED
-#define DAEMONIZED 0
-#else
-#define DAEMONIZED 1
-#endif
+#define DEBUG (defined(DEBUG) ? 1 : 0)
+#define DAEMONIZED (defined(DAEMONIZED) ? 1 : 0)
+#define MONGOOSE_DISABLED (defined(MONGOOSE_DISABLED) ? 1 : 0)
 
 /**
  * @brief Format of the HTTP 200 response

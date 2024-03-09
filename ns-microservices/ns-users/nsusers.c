@@ -1,15 +1,9 @@
 
 #include "ns_runtime.h"
 
-#ifndef DEBUG
-#define DEBUG 0
-#else
-#define DEBUG 1
-#endif
-
 #define true 1
 #define false 0
-
+#define DEBUG (defined(DEBUG) ? 1 : 0)
 #define JWT_SECRET_KEY "my_jwt_secret_key"
 
 /**
