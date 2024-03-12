@@ -48,30 +48,10 @@ test:
 	@echo "done."
 	@echo
 
-depend:
-	@echo
-	@readelf -d $(NAME) | grep 'NEEDED'
-	@echo
-
-install:
-	mkdir -p /usr/lib/netserv
-	cp $(NAME) /usr/bin/$(NAME)
-	cp ../../ns-runtime/libnsruntime.so /usr/lib/netserv
-	ln -s /usr/lib/netserv/libnsruntime.so /usr/lib/libnsruntime.so
-	cp lib$(NAME).so /usr/lib/netserv/lib$(NAME).so
-	ln -s /usr/lib/netserv/lib$(NAME).so /usr/lib/lib$(NAME).so
-	cp ../../ns-gateway/ns_gateway.conf /etc/nginx/sites-available/ns_gateway.conf
-	cp $(NAME)_location.conf /etc/nginx/sites-available/$(NAME)_location.conf
-	cp $(NAME)_upstream.conf /etc/nginx/sites-available/$(NAME)_upstream.conf
-	ln -s /etc/nginx/sites-available/$(NAME)_location.conf /etc/nginx/sites-available/$(NAME)_location.conf
-	ln -s /etc/nginx/sites-available/$(NAME)_upstream.conf /etc/nginx/sites-available/$(NAME)_upstream.conf
-	nginx -t
-	service nginx restart
-
 dist:
 	./dist.sh
 
 clean:
 	rm -rf *.so *.log *.d *.deb $(NAME)
 
-.PHONY: all lib$(NAME) debug release run depend dist clean
+.PHONY: all lib$(NAME) debug release run dist clean
