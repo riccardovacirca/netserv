@@ -106,7 +106,7 @@ void ns_daemonize();
  * JSON
  */
 
-#include "json-c/json.h"
+#include "json.h"
 
 #define NS_JSON_TRUE_S  "true"
 #define NS_JSON_FALSE_S "false"

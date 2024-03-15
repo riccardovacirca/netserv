@@ -1,49 +1,54 @@
 
 NAME:=nsusers
 
+include ../../Makefile.config
+
 all:
 	@echo "Usage: make debug|release|run|test|dist"
 	@echo
 
 runtime:
 	clang -std=gnu99 -shared -fPIC -o ./libnsruntime.so \
-	../../ns-runtime/ns_runtime.c \
-	-I. -I../../ns-runtime/ -I/usr/include -I/usr/include/apr-1.0 \
-	-lapr-1 -laprutil-1 -ljson-c -lcrypto
+	$(PROJ_DIR)/ns-runtime/ns_runtime.c -I. -I$(PROJ_DIR)/ns-runtime -I/usr/include \
+	$(APR_INCLUDES) $(JSON_C_INCLUDES) $(APR_LIBS) $(JSON_C_LIBS) $(APR_LDFLAGS) \
+	$(JSON_C_LDFLAGS) -lcrypto
+	@echo
 
 lib$(NAME):
 	clang -std=gnu99 -shared -fPIC -o lib$(NAME).so $(NAME).c \
-	-I. -I../../ns-runtime -I/usr/include -I/usr/include/apr-1.0 \
-	-L. -lapr-1 -laprutil-1 -lnsruntime
+	-I. -I$(PROJ_DIR)/ns-runtime -I/usr/include $(APR_INCLUDES) $(JSON_C_INCLUDES) \
+	-L. $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime
+	@echo
 
 debug: runtime lib$(NAME)
-	clang -std=gnu99 -g \
-	-o $(NAME) ../../../mongoose/mongoose.c ../../ns-http/ns_http.c \
-	-I. -I../../ns-runtime -I/usr/include -I/usr/include/apr-1.0 \
-	-I../../../mongoose -L. -lapr-1 -laprutil-1 -lnsruntime -l$(NAME)
+	clang -std=gnu99 -g -D_DEBUG -o $(NAME) $(MONGOOSE_SRC) \
+	$(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime -I/usr/include \
+	$(APR_INCLUDES) $(MONGOOSE_INCLUDES) $(JSON_C_INCLUDES) -L. $(APR_LIBS) \
+	$(APR_LDFLAGS) -lnsruntime -l$(NAME)
+	@echo
 
 release: runtime lib$(NAME)
-	clang -std=gnu99 -DDAEMONIZED \
-	-o $(NAME) ../../../mongoose/mongoose.c ../../ns-http/ns_http.c \
-	-I. -I../../ns-runtime -I/usr/include -I/usr/include/apr-1.0 \
-	-I../../../mongoose -L. -lapr-1 -laprutil-1 -lnsruntime -l$(NAME)
+	clang -std=gnu99 -D_DAEMONIZED -o $(NAME) $(MONGOOSE_SRC) \
+	$(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime -I/usr/include \
+	$(APR_INCLUDES) $(MONGOOSE_INCLUDES) -L. $(APR_LIBS) $(APR_LDFLAGS) \
+	-lnsruntime -l$(NAME)
+	@echo
 
+#	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes
 run:
-	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:. \
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:.:$(APR_LIB_DIST):$(JSON_C_LIB_DIST) \
 	./$(NAME) -h 0.0.0.0 -p 2310 -l ./$(NAME).log -d mysql \
 	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
+	@echo
 
 test:
 	@echo "\n\n"
 	curl -i -v -c /tmp/cookies.txt \
 	"http://localhost:2310/api/sign-in" -d "username=bob&password=secret"
 	@echo "\n\n"
-	curl -i -v -X GET -b /tmp/cookies.txt \
-	"http://localhost:2310/api/user-data?id=1"
+	curl -i -v -X GET -b /tmp/cookies.txt "http://localhost:2310/api/user-data?id=1"
 	@echo "\n\n"
-	curl -i -v -X GET -b /tmp/cookies.txt \
-	"http://localhost:2310/api/users-list"
+	curl -i -v -X GET -b /tmp/cookies.txt "http://localhost:2310/api/users-list"
 	@echo "\n\n"
 	@echo "done."
 	@echo

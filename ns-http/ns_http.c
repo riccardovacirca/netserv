@@ -21,9 +21,23 @@
 #include "mongoose.h"
 #include "ns_runtime.h"
 
-#define DEBUG (defined(DEBUG) ? 1 : 0)
-#define DAEMONIZED (defined(DAEMONIZED) ? 1 : 0)
-#define MONGOOSE_DISABLED (defined(MONGOOSE_DISABLED) ? 1 : 0)
+#ifdef _DEBUG
+#define DEBUG 1
+#else
+#define DEBUG 0
+#endif
+
+#ifdef _DAEMONIZED
+#define DAEMONIZED 1
+#else
+#define DAEMONIZED 0
+#endif
+
+#ifdef _MONGOOSE_DISABLED
+#define MONGOOSE_DISABLED 1
+#else
+#define MONGOOSE_DISABLED 0
+#endif
 
 /**
  * @brief Format of the HTTP 200 response
