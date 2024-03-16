@@ -41,17 +41,8 @@ run:
 	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
 	@echo
 
-test:
-	@echo "\n\n"
-	curl -i -v -c /tmp/cookies.txt \
-	"http://localhost:2310/api/sign-in" -d "username=bob&password=secret"
-	@echo "\n\n"
-	curl -i -v -X GET -b /tmp/cookies.txt "http://localhost:2310/api/user-data?id=1"
-	@echo "\n\n"
-	curl -i -v -X GET -b /tmp/cookies.txt "http://localhost:2310/api/users-list"
-	@echo "\n\n"
-	@echo "done."
-	@echo
+test/%:
+	@chmod +x ./$@.sh && ./$@.sh
 
 dist:
 	./dist.sh
