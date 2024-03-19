@@ -44,6 +44,15 @@ run:
 test/%:
 	@chmod +x ./$@.sh && ./$@.sh
 
+dep:
+	@echo
+	@readelf -d $(NAME) | grep 'NEEDED'
+	@echo
+	@readelf -d libnsusers.so | grep 'NEEDED'
+	@echo
+	@readelf -d libnsruntime.so | grep 'NEEDED'
+	@echo
+
 dist:
 	./dist.sh
 
