@@ -2,34 +2,34 @@
 NAME:=nsusers
 TSL:=-D_TLS_DISABLED
 
-include ../../Makefile.config
+include .tools/Makefile.config
 
 all:
 	@echo "Usage: make debug|release|run|test|dist"
 	@echo
 
 runtime:
-	clang -std=gnu99 -shared -fPIC -o ./libnsruntime.so \
-	$(PROJ_DIR)/ns-runtime/ns_runtime.c -I. -I$(PROJ_DIR)/ns-runtime -I/usr/include \
-	$(APR_INCLUDES) $(JSON_C_INCLUDES) $(APR_LIBS) $(JSON_C_LIBS) $(APR_LDFLAGS) \
-	$(JSON_C_LDFLAGS) -lssl -lcrypto
+	clang -std=gnu99 -shared -fPIC -o .tools/builds/libnsruntime.so \
+	$(PROJ_DIR)/ns-runtime/ns_runtime.c -I. -I$(PROJ_DIR)/ns-runtime \
+	-I/usr/include $(APR_INCLUDES) $(JSON_C_INCLUDES) $(APR_LIBS) \
+	$(JSON_C_LIBS) $(APR_LDFLAGS) $(JSON_C_LDFLAGS) -lssl -lcrypto
 	@echo
 
 lib$(NAME):
-	clang -std=gnu99 -shared -fPIC -o lib$(NAME).so $(NAME).c \
-	-I. -I$(PROJ_DIR)/ns-runtime -I/usr/include $(APR_INCLUDES) $(JSON_C_INCLUDES) \
-	-L. $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime
+	clang -std=gnu99 -shared -fPIC -o .tools/builds/lib$(NAME).so $(NAME).c \
+	-I. -I$(PROJ_DIR)/ns-runtime -I/usr/include $(APR_INCLUDES) \
+	$(JSON_C_INCLUDES) -L. $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime
 	@echo
 
 debug: runtime lib$(NAME)
-	clang -std=gnu99 -g -D_DEBUG -o $(NAME) \
+	clang -std=gnu99 -g -D_DEBUG -o .tools/builds/$(NAME) \
 	$(MONGOOSE_SRC) $(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime \
 	-I/usr/include $(APR_INCLUDES) $(MONGOOSE_INCLUDES) $(JSON_C_INCLUDES) \
 	-L. $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime -l$(NAME) $(MONGOOSE_LDFLAGS)
 	@echo
 
 release: runtime lib$(NAME)
-	clang -std=gnu99 -D_DAEMONIZED $(MONGOOSE_CFLAGS) -o $(NAME) \
+	clang -std=gnu99 -D_DAEMONIZED $(MONGOOSE_CFLAGS) -o .tools/builds/$(NAME) \
 	$(MONGOOSE_SRC) $(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime \
 	-I/usr/include $(APR_INCLUDES) $(MONGOOSE_INCLUDES) -L. $(APR_LIBS) \
 	$(APR_LDFLAGS) -lnsruntime -l$(NAME) $(MONGOOSE_LDFLAGS)
