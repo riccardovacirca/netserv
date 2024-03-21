@@ -2,7 +2,7 @@
 NAME:=nsusers
 TSL:=-D_TLS_DISABLED
 
-PROJ_DIR:= $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+PROJ_DIR:= $(shell dirname $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST)))))
 BASE_DIR := $(shell dirname $(PROJ_DIR))
 
 MONGOOSE_CFLAGS:=-DMG_TLS=MG_TLS_OPENSSL
@@ -27,6 +27,7 @@ all:
 	@echo
 
 runtime:
+	mkdir -p .tools/builds
 	clang -std=gnu99 -shared -fPIC -o .tools/builds/libnsruntime.so \
 	$(PROJ_DIR)/ns-runtime/ns_runtime.c -I. -I$(PROJ_DIR)/ns-runtime \
 	-I/usr/include $(APR_INCLUDES) $(JSON_C_INCLUDES) $(APR_LIBS) \
@@ -36,21 +37,22 @@ runtime:
 lib$(NAME):
 	clang -std=gnu99 -shared -fPIC -o .tools/builds/lib$(NAME).so $(NAME).c \
 	-I. -I$(PROJ_DIR)/ns-runtime -I/usr/include $(APR_INCLUDES) \
-	$(JSON_C_INCLUDES) -L. $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime
+	$(JSON_C_INCLUDES) -L.tools/builds $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime
 	@echo
 
 debug: runtime lib$(NAME)
-	clang -std=gnu99 -g -D_DEBUG -o .tools/builds/$(NAME) \
+	clang -std=gnu99 -g -D_DEBUG $(MONGOOSE_CFLAGS) -o .tools/builds/$(NAME) \
 	$(MONGOOSE_SRC) $(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime \
 	-I/usr/include $(APR_INCLUDES) $(MONGOOSE_INCLUDES) $(JSON_C_INCLUDES) \
-	-L. $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime -l$(NAME) $(MONGOOSE_LDFLAGS)
+	-L.tools/builds $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime -l$(NAME) \
+	$(MONGOOSE_LDFLAGS)
 	@echo
 
 release: runtime lib$(NAME)
 	clang -std=gnu99 -D_DAEMONIZED $(MONGOOSE_CFLAGS) -o .tools/builds/$(NAME) \
 	$(MONGOOSE_SRC) $(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime \
-	-I/usr/include $(APR_INCLUDES) $(MONGOOSE_INCLUDES) -L. $(APR_LIBS) \
-	$(APR_LDFLAGS) -lnsruntime -l$(NAME) $(MONGOOSE_LDFLAGS)
+	-I/usr/include $(APR_INCLUDES) $(MONGOOSE_INCLUDES) -L.tools/builds \
+	$(APR_LIBS) $(APR_LDFLAGS) -lnsruntime -l$(NAME) $(MONGOOSE_LDFLAGS)
 	@echo
 
 #	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes
@@ -76,6 +78,6 @@ dist:
 	./dist.sh
 
 clean:
-	rm -rf *.so *.log *.d *.deb $(NAME)
+	rm -rf .tools/builds
 
 .PHONY: all lib$(NAME) debug release run dist clean

@@ -96,9 +96,9 @@ chmod +x ${DIR}/DEBIAN/postinst
 chmod +x ${DIR}/DEBIAN/prerm
 chmod +x ${DIR}/DEBIAN/postrm
 
-cp ${NAME} ${DIR}/usr/bin/${NAME}
-cp lib${NAME}.so ${DIR}/usr/lib/lib${NAME}.so
-cp libnsruntime.so ${DIR}/usr/lib/libnsruntime.so
+cp .tools/builds/${NAME} ${DIR}/usr/bin/${NAME}
+cp .tools/builds/lib${NAME}.so ${DIR}/usr/lib/lib${NAME}.so
+cp .tools/builds/libnsruntime.so ${DIR}/usr/lib/libnsruntime.so
 
 
 cat <<EOF > ${DIR}/etc/nginx/sites-available/ns_gateway.conf
