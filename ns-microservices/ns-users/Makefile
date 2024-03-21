@@ -1,5 +1,6 @@
 
 NAME:=nsusers
+TSL:=-D_TLS_DISABLED
 
 include ../../Makefile.config
 
@@ -11,7 +12,7 @@ runtime:
 	clang -std=gnu99 -shared -fPIC -o ./libnsruntime.so \
 	$(PROJ_DIR)/ns-runtime/ns_runtime.c -I. -I$(PROJ_DIR)/ns-runtime -I/usr/include \
 	$(APR_INCLUDES) $(JSON_C_INCLUDES) $(APR_LIBS) $(JSON_C_LIBS) $(APR_LDFLAGS) \
-	$(JSON_C_LDFLAGS) -lcrypto
+	$(JSON_C_LDFLAGS) -lssl -lcrypto
 	@echo
 
 lib$(NAME):
@@ -21,23 +22,23 @@ lib$(NAME):
 	@echo
 
 debug: runtime lib$(NAME)
-	clang -std=gnu99 -g -D_DEBUG -o $(NAME) $(MONGOOSE_SRC) \
-	$(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime -I/usr/include \
-	$(APR_INCLUDES) $(MONGOOSE_INCLUDES) $(JSON_C_INCLUDES) -L. $(APR_LIBS) \
-	$(APR_LDFLAGS) -lnsruntime -l$(NAME)
+	clang -std=gnu99 -g -D_DEBUG -o $(NAME) \
+	$(MONGOOSE_SRC) $(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime \
+	-I/usr/include $(APR_INCLUDES) $(MONGOOSE_INCLUDES) $(JSON_C_INCLUDES) \
+	-L. $(APR_LIBS) $(APR_LDFLAGS) -lnsruntime -l$(NAME) $(MONGOOSE_LDFLAGS)
 	@echo
 
 release: runtime lib$(NAME)
-	clang -std=gnu99 -D_DAEMONIZED -o $(NAME) $(MONGOOSE_SRC) \
-	$(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime -I/usr/include \
-	$(APR_INCLUDES) $(MONGOOSE_INCLUDES) -L. $(APR_LIBS) $(APR_LDFLAGS) \
-	-lnsruntime -l$(NAME)
+	clang -std=gnu99 -D_DAEMONIZED $(MONGOOSE_CFLAGS) -o $(NAME) \
+	$(MONGOOSE_SRC) $(PROJ_DIR)/ns-http/ns_http.c -I. -I$(PROJ_DIR)/ns-runtime \
+	-I/usr/include $(APR_INCLUDES) $(MONGOOSE_INCLUDES) -L. $(APR_LIBS) \
+	$(APR_LDFLAGS) -lnsruntime -l$(NAME) $(MONGOOSE_LDFLAGS)
 	@echo
 
 #	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes
 run:
 	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:.:$(APR_LIB_DIST):$(JSON_C_LIB_DIST) \
-	./$(NAME) -h 0.0.0.0 -p 2310 -l ./$(NAME).log -d mysql \
+	./$(NAME) -h 0.0.0.0 -p 2310 -s 2443 -l ./$(NAME).log -d mysql \
 	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
 	@echo
 
@@ -48,7 +49,7 @@ dep:
 	@echo
 	@readelf -d $(NAME) | grep 'NEEDED'
 	@echo
-	@readelf -d libnsusers.so | grep 'NEEDED'
+	@readelf -d lib$(NAME).so | grep 'NEEDED'
 	@echo
 	@readelf -d libnsruntime.so | grep 'NEEDED'
 	@echo

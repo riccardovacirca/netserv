@@ -42,6 +42,89 @@
 #define HTTP_OK_FMT "HTTP/1.1 200 OK\r\n%sContent-Length: %d\r\n\r\n"
 #define NS_DBD_POOL_INIT_SIZE 20
 
+#ifdef _TLS_DISABLED
+#define TLS_DISABLED 1
+#else
+#define TLS_DISABLED 0
+#ifdef _TLS_TWOWAY_DISABLED
+#define TLS_TWOWAY_DISABLED 1
+#else
+#define TLS_TWOWAY_DISABLED 0
+static const char *s_tls_ca =
+  "-----BEGIN CERTIFICATE-----\n"
+  "MIIDXzCCAkegAwIBAgIUeXwJ5tgRmnMQAoKlkzvFRTdSDAUwDQYJKoZIhvcNAQEL\n"
+  "BQAwPzELMAkGA1UEBhMCSVQxDjAMBgNVBAgMBUl0YWx5MREwDwYDVQQKDAhDZXJ0\n"
+  "IEx0ZDENMAsGA1UEAwwEY2VydDAeFw0yNDAzMTkxMTU0MTJaFw0yNTAzMTkxMTU0\n"
+  "MTJaMD8xCzAJBgNVBAYTAklUMQ4wDAYDVQQIDAVJdGFseTERMA8GA1UECgwIQ2Vy\n"
+  "dCBMdGQxDTALBgNVBAMMBGNlcnQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n"
+  "AoIBAQDgd3Z/+vLFMK04aZgv0k7paZcNBR2WvgQJcEl8w0Hbo42x/u24c4hdQLa7\n"
+  "yM62xC5o4LzjDA03Bnb6PQwTBYLTLGwN0qmV0ncKnq67a9lWRvhTOkzjv0l7aoHQ\n"
+  "ggls8R7XegoKDNX5mu2otau1dg5neWmepdZh2c7IXP7J4AnyiH6CwQ2CU6Ijja46\n"
+  "JksZDPCfCTGXylURP/Q5bLrdSojxl6fA7vqSE+rprASbgEfQhFLRMPCow3cWzKjo\n"
+  "FyVRKJ56zkzTfatNwJDopA2gsHN5J+RGEwENBJh4z42y3AIX++GTgZQUTmoWZMQp\n"
+  "VUV3GQI7DcMasQuKYWxD9qDOmlIpAgMBAAGjUzBRMB0GA1UdDgQWBBS1rGRSTcd2\n"
+  "eIymxBTRKsWBEJG9RTAfBgNVHSMEGDAWgBS1rGRSTcd2eIymxBTRKsWBEJG9RTAP\n"
+  "BgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCLr6926cX7RNVeQsOC\n"
+  "yBn/3KzYuMTxfUKk33lj6Nc70MS2/x0ec7I38UAt65FCUVcS7ZDOWKGpA9Aj37+v\n"
+  "ra0sedFkTzHoVseNNapGfbnfU+Na7jX1+E9lqgbb3bIZxdejc2uo2FWbdP/mX2JI\n"
+  "sK9IoR4+jX77lEFz1Z/e0SMYyeBk/BTe/O/N0f5UJOTpYC3Xfv23qR51YQ05qmzy\n"
+  "iZXQiX4/aQNhymnFxN0LSE5lVfU+qUEaFj1gRDBcy2X1l5+JKGH/MQd0xWRPY2Hc\n"
+  "Auyxs1oih5xMBSFzoZZatXabqIZN2r7QJw3Js2STWEWx64Gn8U1egqqvjz19w/YB\n"
+  "EB7K\n"
+  "-----END CERTIFICATE-----\n";
+#endif
+
+static const char *s_tls_cert =
+  "-----BEGIN CERTIFICATE-----\n"
+  "MIIDCTCCAfECFHnImK7xF6ggty1hk+7gY6n4cpcHMA0GCSqGSIb3DQEBCwUAMD8x\n"
+  "CzAJBgNVBAYTAklUMQ4wDAYDVQQIDAVJdGFseTERMA8GA1UECgwIQ2VydCBMdGQx\n"
+  "DTALBgNVBAMMBGNlcnQwHhcNMjQwMzE5MTE1NDQ4WhcNMjUwMzE5MTE1NDQ4WjBD\n"
+  "MQswCQYDVQQGEwJJVDEOMAwGA1UECAwFSXRhbHkxEzARBgNVBAoMClNlcnZlciBM\n"
+  "dGQxDzANBgNVBAMMBnNlcnZlcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC\n"
+  "ggEBAOLKedmz3LkQJT2n5B75TDFSrSoiCYnUeoUDpi0TTDXBvewJ5MX5YW3+lv7I\n"
+  "CoEnjQ9Lz4yA5nfC8feib0PuxZZBXQWuiyDilVqWpUIXBgEGNyyzOtWeGJl3P6jm\n"
+  "4ICJ4iU0nF7wQm5+1OhbtmmuldywtUddLkNcfxezP4rn05K9LVfGJuhBidxjwto+\n"
+  "qjYw99AvoGA0Hd/2ABwv+1kkmJ9oMdDFAlcJCJ8+ifsV6Ih0WkGpnH0Zbw+xYNj3\n"
+  "aBmr7lU6bigqcnrv2gDWCaz481nsrkhmHs53fWOMrfIi0AnOMQSAZ6q6nilqREkG\n"
+  "6//axui57Di4bS3IGwXwJA4IG7ECAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAjqrE\n"
+  "f/ZAzkPVQ3S2jNRPlxkaF54sZ5ULMMBKf+ynJgZ6JVI8p0o2vwJ8vDrwsI+hOu7M\n"
+  "s5PLwyjJoRBm5fMzpHpM+X/EbO0Br8lQw3Nplmel9PtXshzAFIX7Q8iE9rUgGyXU\n"
+  "N/gbJHDjDJ375bPD7hy40BTBsemPHB+u2FQNzFLRZU2TOljw9DMMGNDJBoNH4SUp\n"
+  "zko31m1x7cwgq/9GEu3ZctCMisxkwI7U+Ny1IWJaQp/jesGymy2U335WGrBL2Hzk\n"
+  "OJNYyHYy7GHWD1Gt7dAzVG0yHlT3ch2z7S2MRT7DO3y17XPTeBbVi5jkqp39NB4i\n"
+  "BcP7B7RrNC3MtV9fVA==\n"
+  "-----END CERTIFICATE-----\n";
+
+static const char *s_tls_key =
+  "-----BEGIN RSA PRIVATE KEY-----\n"
+  "MIIEowIBAAKCAQEA4sp52bPcuRAlPafkHvlMMVKtKiIJidR6hQOmLRNMNcG97Ank\n"
+  "xflhbf6W/sgKgSeND0vPjIDmd8Lx96JvQ+7FlkFdBa6LIOKVWpalQhcGAQY3LLM6\n"
+  "1Z4YmXc/qObggIniJTScXvBCbn7U6Fu2aa6V3LC1R10uQ1x/F7M/iufTkr0tV8Ym\n"
+  "6EGJ3GPC2j6qNjD30C+gYDQd3/YAHC/7WSSYn2gx0MUCVwkInz6J+xXoiHRaQamc\n"
+  "fRlvD7Fg2PdoGavuVTpuKCpyeu/aANYJrPjzWeyuSGYeznd9Y4yt8iLQCc4xBIBn\n"
+  "qrqeKWpESQbr/9rG6LnsOLhtLcgbBfAkDggbsQIDAQABAoIBAQDRyFV6aYPMtACe\n"
+  "zcSYWiZ+oWmIxb9o/WDv1XZLz8P5HePeiTBTaOEU7CEkQEpnOfyjn462+y00ruFA\n"
+  "HcMqZZ3j5UZ00QXlP3LEPwFS5xUosWUsNgZAP2Ol4cbDJ/2XKPRFUisrLrdkmnG7\n"
+  "Fcrgaxw47kRhZPI8YT024RnwFY2B9zpGrSyxChQAja1wmlrcacBkY6gSH+s19X1O\n"
+  "TfK6BH+KSVkf/j1W9f3kQRMQTqRmdO5ghKplEurtZv2ud+qNlavVjjoIyfv8xDG6\n"
+  "jAZReO5fQ7ZhiyfT1gPWvDMz/yWgSJsCbjDJ0mHKlTvFqrcDcD370u1JwJ13IsWO\n"
+  "KluIYL2BAoGBAPLrwDfCKBA4gygvFMmT2qfd8iy6ZhSvcxYb7csi5js3Tvqf7SJe\n"
+  "a62YkUVPgiHyreMxtOMsTwi5MiZzz/uctfbnmHdMohWvu+Dfukm63FrZW9Evz4De\n"
+  "3cQrdmjD6PqDsvF30ANtguaaXMjeeyp2JeRPiosBmfjWCcMo3KpU08HpAoGBAO8A\n"
+  "ZqQZRou+x0z3XL1/FyBCwwuN65LW3WwRHpXDmpg6aVoD+Ti9Wnya/101M9Qk829y\n"
+  "Uc0LyHc2EMcwRKrNnfbF0r+zy5IZsFogP3rv+mQWPdoCDpVb+jWfS1OuX0ruV+AB\n"
+  "rMWI0b6MPozyIeTMY59PgjpncjTDlAbl/JsHzuaJAoGAZ5IIRD2toyzVDr70F/XI\n"
+  "FiZU6KkYeN1NLjH+MsvQaZLtQ4IIMs0bD8qqtWhuzVaQuPsqamkr0UZUkXxzQo3Q\n"
+  "L1MS+FpeCO0CJ6B75o+a/8kIkqnVyNY8qzT0qTpODPE1zCoPMEbytqs9wA7LaJEz\n"
+  "GqKnKRknsqZfRywW2TCNkHECgYAEk6ZjiBRgwrOAVtBQ1Kk1tfGUPBCBzFmLIzzJ\n"
+  "s2g3eA7iaWcRXhbogfNX7pfifR6oSLEmUw5wsflaRyNZffyDaEBj6WaBkrpcz3dH\n"
+  "vGa4GfDvRtDOrWc6NaW0oYczoSLPqFiNo9QYaQkdm9loTz2tJFGjGq4GMqSYCTlw\n"
+  "IpMkuQKBgA1pSq64+89OtMhUlnljfsOwiLjQ6rlu2A3hPlOrK+nwMPALeXyRuUhK\n"
+  "lZqZhzE3Gb9PKRwyZVAxRR/+X+xkUiWknQowTZ0j4QIsaweVUM8o+Ob3saWd7ueR\n"
+  "ps2JdPk4UiUMufm61Fk7IwaW6aWhSNplXM8cjtrtkdBICVOxRgZL\n"
+  "-----END RSA PRIVATE KEY-----\n";
+#endif
+
 typedef struct ns_dbd_pool_t {
   apr_array_header_t *connections;
   int counter;
@@ -186,9 +269,7 @@ static void ns_dbd_pool_destroy() {
   }
 }
 
-static void ns_http_request_headers_set(
-  apr_pool_t *mp, ns_http_request_t *rq, struct mg_http_message *hm)
-{
+static void ns_http_request_headers_set(apr_pool_t *mp, ns_http_request_t *rq, struct mg_http_message *hm) {
   apr_table_t *headers = NULL;
   size_t i, max = sizeof(hm->headers) / sizeof(hm->headers[0]);
   for (i = 0; i < max && hm->headers[i].name.len > 0; i++) {
@@ -214,9 +295,7 @@ static void ns_http_request_headers_set(
   }
 }
 
-static apr_table_t* ns_http_request_args_parse(
-  apr_pool_t *mp, const char *s, const char *sp1, const char *sp2)
-{
+static apr_table_t* ns_http_request_args_parse(apr_pool_t *mp, const char *s, const char *sp1, const char *sp2) {
   apr_table_t *result = NULL;
   if (mp && s && sp1 && sp2) {
     apr_array_header_t *ar = ns_split(mp, s, sp1);
@@ -245,9 +324,7 @@ static apr_table_t* ns_http_request_args_parse(
   return result;
 }
 
-static apr_table_t* ns_http_request_cookies_parse(
-  apr_pool_t *mp, struct mg_http_message *hm)
-{
+static apr_table_t* ns_http_request_cookies_parse(apr_pool_t *mp, struct mg_http_message *hm) {
   apr_table_t *result = NULL;
   struct mg_str *cookies = mg_http_get_header(hm, "Cookie");
   if (cookies != NULL) {
@@ -256,9 +333,7 @@ static apr_table_t* ns_http_request_cookies_parse(
   return result;
 }
 
-static apr_table_t* ns_http_query_string_parse(
-  apr_pool_t*mp, struct mg_http_message *hm)
-{
+static apr_table_t* ns_http_query_string_parse(apr_pool_t*mp, struct mg_http_message *hm) {
   apr_table_t *result = NULL;
   if (hm->query.len > 0) {
     const char *query = ns_str(mp, hm->query.ptr, hm->query.len);
@@ -267,9 +342,7 @@ static apr_table_t* ns_http_query_string_parse(
   return result;
 }
 
-static apr_table_t* ns_http_request_body_parse(
-  apr_pool_t*mp, struct mg_http_message *hm)
-{
+static apr_table_t* ns_http_request_body_parse(apr_pool_t*mp, struct mg_http_message *hm) {
   apr_table_t *result = NULL;
   if (hm->body.len > 0) {
     const char *body = ns_str(mp, hm->body.ptr, hm->body.len);
@@ -292,10 +365,7 @@ static void ns_signal_handler(struct sigaction *sig_action, sighd_t cb) {
   sigaction(SIGINT, sig_action, NULL);
 }
 
-static int ns_http_request_multipart_parse(
-  apr_pool_t *mp, ns_http_request_t *rq, struct mg_connection *c,
-  struct mg_http_message *hm)
-{
+static int ns_http_request_multipart_parse(apr_pool_t *mp, ns_http_request_t *rq, struct mg_connection *c, struct mg_http_message *hm) {
   char *err;
   apr_size_t fsize;
   const char *fname, *forig, *fpath;
@@ -333,9 +403,7 @@ static int ns_http_request_multipart_parse(
   return rq->multipart_data->nelts > 0;
 }
 
-static void ns_http_request_handler(
-  struct mg_connection *c, int ev, void *ev_data)
-{
+static void ns_http_request_handler(struct mg_connection *c, int ev, void *ev_data) {
   struct state_t {
     struct flag_t {
       int ev_data, fn_data, init, pool, logger, request, method, uri, query,
@@ -356,6 +424,18 @@ static void ns_http_request_handler(
     .server = NULL, .er_msg = NULL
   };
   do {
+    if (ev == MG_EV_ACCEPT && c->fn_data != NULL) {
+      #ifndef _TLS_DISABLED
+      struct mg_tls_opts opts = {
+        #ifndef _TLS_TWOWAY_DISABLED
+        .ca = mg_str(s_tls_ca),
+        #endif
+        .cert = mg_str(s_tls_cert),
+        .key = mg_str(s_tls_key)
+      };
+      mg_tls_init(c, &opts);
+      #endif
+    }
     if (ev == MG_EV_HTTP_MSG) {
       st.flag.ev_data = ev_data != NULL;
       if ((st.error = !st.flag.ev_data)) break;
@@ -613,8 +693,7 @@ static void ns_http_request_handler(
   }
 }
 
-static int ns_cmd_args_parse(
-  ns_server_t *s, int argc, char *argv[], char **er_msg) {
+static int ns_cmd_args_parse(ns_server_t *s, int argc, char *argv[], char **er_msg) {
   struct state_t {
     struct flag_t {
       int input, arg_format, host, port, log_file;
@@ -677,8 +756,7 @@ static int ns_cmd_args_parse(
   return st.result;
 }
 
-static int ns_server_init(
-  apr_pool_t *mp, ns_server_t **s, int argc, char *argv[], char **er_msg) {
+static int ns_server_init(apr_pool_t *mp, ns_server_t **s, int argc, char *argv[], char **er_msg) {
   struct state_t {
     struct flag_t {
       int input, args, addr, mutex, logger;
@@ -697,6 +775,11 @@ static int ns_server_init(
     st.flag.args = ns_cmd_args_parse(*s, argc, argv, er_msg);
     if ((st.error = !st.flag.args)) break;
     (*s)->addr = apr_psprintf(mp, "%s:%s", (*s)->host, (*s)->port);
+    if (!TLS_DISABLED) {
+      if ((*s)->port_s) {
+        (*s)->addr_s = apr_psprintf(mp, "%s:%s", (*s)->host, (*s)->port_s);
+      }
+    }
     st.flag.addr = (*s)->addr != NULL;
     if ((st.error = !st.flag.addr)) break;
     apr_status_t rv;
@@ -800,10 +883,10 @@ int main(int argc, char **argv) {
       if (DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP server initialized");
       }
-      if (SSL_ENABLED) {
-        mg_http_listen(&(st.mgr), (st.server)->addr,
-                       ns_http_request_handler, NULL);
+      if (!TLS_DISABLED) {
         if ((st.server)->addr_s) {
+          mg_http_listen(&(st.mgr), (st.server)->addr,
+                         ns_http_request_handler, NULL);
           mg_http_listen(&(st.mgr), (st.server)->addr_s,
                          ns_http_request_handler, (void*)(st.server));
         }
