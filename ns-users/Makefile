@@ -2,7 +2,25 @@
 NAME:=nsusers
 TSL:=-D_TLS_DISABLED
 
-include .tools/Makefile.config
+PROJ_DIR:= $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+BASE_DIR := $(shell dirname $(PROJ_DIR))
+
+MONGOOSE_CFLAGS:=-DMG_TLS=MG_TLS_OPENSSL
+MONGOOSE_INCLUDES:=-I$(BASE_DIR)/mongoose
+MONGOOSE_LDFLAGS:=-lssl -lcrypto
+MONGOOSE_SRC:=$(BASE_DIR)/mongoose/mongoose.c
+
+APR_INCLUDES:=-I$(BASE_DIR)/apr/dist/include/apr-2
+APR_LIBS:=-L$(BASE_DIR)/apr/dist/lib -L$(BASE_DIR)/apr/dist/lib/apr-2
+APR_LDFLAGS:=-lapr-2
+APR_LIB_DIST:=$(BASE_DIR)/apr/dist/lib
+APR_INCLUDE_DIST:=$(BASE_DIR)/apr/dist/include/apr-2
+
+JSON_C_INCLUDES:=-I$(BASE_DIR)/json-c -I$(BASE_DIR)/json-c/dist
+JSON_C_LIBS:=-L$(BASE_DIR)/json-c/dist
+JSON_C_LDFLAGS:=-ljson-c
+JSON_C_LIB_DIST:=$(BASE_DIR)/json-c/dist
+JSON_C_INCLUDE_DIST:=$(BASE_DIR)/json-c/dist
 
 all:
 	@echo "Usage: make debug|release|run|test|dist"

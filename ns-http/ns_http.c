@@ -39,17 +39,11 @@
 #define MONGOOSE_DISABLED 0
 #endif
 
-#define HTTP_OK_FMT "HTTP/1.1 200 OK\r\n%sContent-Length: %d\r\n\r\n"
-#define NS_DBD_POOL_INIT_SIZE 20
-
 #ifdef _TLS_DISABLED
 #define TLS_DISABLED 1
 #else
 #define TLS_DISABLED 0
-#ifdef _TLS_TWOWAY_DISABLED
-#define TLS_TWOWAY_DISABLED 1
-#else
-#define TLS_TWOWAY_DISABLED 0
+
 static const char *s_tls_ca =
   "-----BEGIN CERTIFICATE-----\n"
   "MIIDXzCCAkegAwIBAgIUeXwJ5tgRmnMQAoKlkzvFRTdSDAUwDQYJKoZIhvcNAQEL\n"
@@ -72,7 +66,6 @@ static const char *s_tls_ca =
   "Auyxs1oih5xMBSFzoZZatXabqIZN2r7QJw3Js2STWEWx64Gn8U1egqqvjz19w/YB\n"
   "EB7K\n"
   "-----END CERTIFICATE-----\n";
-#endif
 
 static const char *s_tls_cert =
   "-----BEGIN CERTIFICATE-----\n"
@@ -123,7 +116,11 @@ static const char *s_tls_key =
   "lZqZhzE3Gb9PKRwyZVAxRR/+X+xkUiWknQowTZ0j4QIsaweVUM8o+Ob3saWd7ueR\n"
   "ps2JdPk4UiUMufm61Fk7IwaW6aWhSNplXM8cjtrtkdBICVOxRgZL\n"
   "-----END RSA PRIVATE KEY-----\n";
+
 #endif
+
+#define HTTP_OK_FMT "HTTP/1.1 200 OK\r\n%sContent-Length: %d\r\n\r\n"
+#define NS_DBD_POOL_INIT_SIZE 20
 
 typedef struct ns_dbd_pool_t {
   apr_array_header_t *connections;
@@ -427,9 +424,7 @@ static void ns_http_request_handler(struct mg_connection *c, int ev, void *ev_da
     if (ev == MG_EV_ACCEPT && c->fn_data != NULL) {
       #ifndef _TLS_DISABLED
       struct mg_tls_opts opts = {
-        #ifndef _TLS_TWOWAY_DISABLED
         .ca = mg_str(s_tls_ca),
-        #endif
         .cert = mg_str(s_tls_cert),
         .key = mg_str(s_tls_key)
       };

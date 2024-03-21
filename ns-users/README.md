@@ -1,4 +1,8 @@
+# ns-users
+NetServ HTTP microservice for user management
 
+### Example SQL users table
+```sql
 drop table if exists `users`;
 
 create table if not exists `users` (
@@ -16,3 +20,4 @@ insert into `users` (`username`, `password`) values ('tom', MD5('secret'));
 insert into `users` (`username`, `password`) values ('ted', MD5('secret'));
 insert into `users` (`username`, `password`) values ('sam', MD5('secret'));
 insert into `users` (`username`, `password`) values ('roy', MD5('secret'));
+```
