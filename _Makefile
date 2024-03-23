@@ -3,8 +3,8 @@ include .tools/Makefile.config
 
 CC:=clang
 CFLAGS:=-std=gnu99 -D_MONGOOSE -DMG_TLS=MG_TLS_OPENSSL -D_TLS -D_TLS_TWOWAY
-INCLUDES:=-I. -I$(APR)/dist/include/apr-2 -I$(JSON_C) -I$(JSON_C)/dist -I$(MONGOOSE) -I/usr/include
-LIBS:=-L$(APR)/dist/lib -L$(JSON_C)/dist
+INCLUDES:=-I. -I../apr/dist/include/apr-2 -I../json-c -I../json-c/dist -I../mongoose -I/usr/include
+LIBS:=-L../dist/lib -L../json-c/dist
 LDFLAGS:=-lapr-2 -ljson-c -lssl -lcrypto
 SRC:=$(MONGOOSE)/mongoose.c libnetsrv.c netsrv.c
 
@@ -39,8 +39,8 @@ certs:
 	@mkdir -p .tools/builds && rm -rf .tools/builds/demo .tools/builds/demo.log
 	$(CC) $(CFLAGS) -o .tools/builds/$@ $(SRC) services/$@.c $(INCLUDES) $(LIBS) $(LDFLAGS)
 	@cp .tools/builds/$@ .tools/builds/demo
-	@cp -r $(APR)/dist/lib/libapr-2.* .tools/builds
-	@cp -r $(JSON_C)/dist/libjson-c.* .tools/builds
+	@cp -r ../dist/lib/libapr-2.* .tools/builds
+	@cp -r ../json-c/dist/libjson-c.* .tools/builds
 	$(DIST)
 
 run:

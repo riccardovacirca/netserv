@@ -1,26 +1,50 @@
 # netsrv
 Lightweight microservices framework
 
-### Debian development environment
+### Install common development tools
 ```bash
-$ sudo apt install clang make curl git python autoconf libtool-bin libexpat1-dev cmake
-$ sudo apt install libssl-dev libmariadb-dev libpq-dev libsqlite3-dev unixodbc-dev
-$ git clone https://github.com/apache/apr.git
-$ git clone https://github.com/json-c/json-c.git
-$ git clone https://github.com/cesanta/mongoose.git
-$ cd apr && mkdir dist
-$ ./buildconf
-$ ./configure --prefix=/path/to/apr/dist \
-              --with-mysql --with-pgsql --with-sqlite3 --with-odbc
-$ make && make install
-$ cd json-c && mkdir dist && cd dist && cmake .. && make
+sudo apt install clang make curl git python autoconf libtool-bin libexpat1-dev cmake
+sudo apt install libssl-dev libmariadb-dev libpq-dev libsqlite3-dev unixodbc-dev
 ```
 
-### GNUstep OBJ-C support
+### Install GNUstep OBJ-C support
 ```bash
-$ sudo apt install gnustep-devel gobjc
-$ ln -s /usr/lib/gcc/x86_64-linux-gnu/10/include/objc /usr/local/include/objc
+sudo apt install gnustep-devel gobjc
+ln -s /usr/lib/gcc/x86_64-linux-gnu/10/include/objc /usr/local/include/objc
 ```
+
+### Install apr-2 dependencies
+```bash
+git clone https://github.com/apache/apr.git apr
+cd apr && ./buildconf
+./configure --prefix=/tmp/apr-install --with-mysql --with-pgsql --with-sqlite3 --with-odbc
+make && make install
+mv /tmp/apr-install/include/apr-2 /path/to/netsrv/.tools/include
+mv /tmp/apr-install/lib /path/to/netsrv/.tools/lib
+rm -rf /tmp/apr-install
+```
+
+### Install json-c dependencies
+```bash
+git clone https://github.com/json-c/json-c.git json-c
+mkdir json-c-build && cd json-c-build
+cmake ../json-c -DCMAKE_INSTALL_PREFIX=/tmp/json-c-install
+make && make install
+mv /tmp/json-c-install/include/json-c /path/to/netsrv/.tools/include
+mv /tmp/json-c-install/lib /path/to/netsrv/.tools/lib
+rm -rf /tmp/json-c-install
+```
+
+### Install Mongoose dependencies
+```bash
+git clone https://github.com/cesanta/mongoose.git mongoose
+cp ./mongoose/mongoose.h /path/to/netsrv/.tools/include
+cp ./mongoose/mongoose.c /path/to/netsrv/.tools/src
+
+```
+
+
+
 
 ### Nginx local API gateway
 

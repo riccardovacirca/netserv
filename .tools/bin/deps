@@ -1,0 +1,4 @@
+#!/bin/bash
+echo ""
+readelf -d .tools/bin/$1 | grep 'NEEDED'
+echo ""
