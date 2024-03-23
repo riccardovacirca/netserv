@@ -4,10 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/**",
-                "/home/riccardo/projects/apr/dist/**",
-                "/home/riccardo/projects/mongoose/**",
-                "/home/riccardo/projects/json-c/dist/**"
+                "/usr/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",

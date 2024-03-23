@@ -1,0 +1,5 @@
+#!/bin/bash
+dir=.tools/etc/certificates
+rm -rf ${dir}/ca_root.*
+openssl genrsa -out ${dir}/ca_root.key 4096
+openssl req -new -x509 -days 365 -key ${dir}/ca_root.key -out ${dir}/ca_root.crt -subj "/CN=NETSERV_ROOT_CA"

@@ -1,0 +1,6 @@
+#!/bin/bash
+dir=.tools/etc/certificates
+rm -rf ${dir}/client.*
+openssl genrsa -out ${dir}/client.key 2048
+openssl req -new -key ${dir}/client.key -out ${dir}/client.csr -subj "/CN=client"
+openssl x509 -req -days 365 -in ${dir}/client.csr -CA ${dir}/ca_root.crt -CAkey ${dir}/ca_root.key -set_serial 01 -out ${dir}/client.crt

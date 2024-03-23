@@ -1,0 +1,51 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+  exit 1
+fi
+
+name=$1
+dir=.tools/etc/certificates
+rm -rf ${dir}/${name}.* src/${name}/certs.h
+openssl genrsa -out ${dir}/${name}.key 2048
+openssl req -new -key ${dir}/${name}.key -out ${dir}/${name}.csr -subj "/CN=${name}"
+openssl x509 -req -days 365 -in ${dir}/${name}.csr -CA ${dir}/ca_root.crt -CAkey ${dir}/ca_root.key -set_serial 01 -out ${dir}/${name}.crt
+
+ca_crt_file=${dir}/ca_root.crt
+ca_c_variable_name=s_tls_ca
+server_crt_file=${dir}/${name}.crt
+server_crt_c_variable_name=s_tls_cert
+server_key_file=${dir}/${name}.key
+server_key_c_variable_name=s_tls_key
+
+# ca_crt
+ca_crt_variable="const char *${ca_c_variable_name} ="
+while IFS= read -r line; do
+  ca_crt_variable="${ca_crt_variable}\n\"${line}\\\\n\""
+done < "$ca_crt_file"
+ca_crt_variable="${ca_crt_variable};"
+
+# server_crt
+server_crt_variable="const char *${server_crt_c_variable_name} ="
+while IFS= read -r line; do
+  server_crt_variable="${server_crt_variable}\n\"${line}\\\\n\""
+done < "$server_crt_file"
+server_crt_variable="${server_crt_variable};"
+
+# server_key
+server_key_variable="const char *${server_key_c_variable_name} ="
+while IFS= read -r line; do
+  server_key_variable="${server_key_variable}\n\"${line}\\\\n\""
+done < "$server_key_file"
+server_key_variable="${server_key_variable};"
+
+echo -e "#ifndef CERT_H" > src/${name}/certs.h
+echo -e "#define CERT_H\n" >> src/${name}/certs.h
+echo -e "#ifdef _TLS" >> src/${name}/certs.h
+echo -e "#ifdef _TLS_TWOWAY" >> src/${name}/certs.h
+echo -e "$ca_crt_variable" >> src/${name}/certs.h
+echo -e "#endif\n" >> src/${name}/certs.h
+echo -e "$server_crt_variable" >> src/${name}/certs.h
+echo -e "$server_key_variable" >> src/${name}/certs.h
+echo -e "#endif" >> src/${name}/certs.h
+echo -e "#endif /* CERT_H */" >> src/${name}/certs.h
