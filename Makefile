@@ -3,21 +3,21 @@ include .tools/Makefile.config
 
 CC:=clang
 CFLAGS:=-std=gnu99 -D_MONGOOSE -DMG_TLS=MG_TLS_OPENSSL -D_TLS -D_TLS_TWOWAY
-INCLUDES:=-I. $(APR_INCLUDES) -I/usr/include $(JSON_C_INCLUDES) -I../mongoose
+INCLUDES:=-I/usr/include -I. $(APR_INCLUDES) $(JSON_C_INCLUDES) -I../mongoose
 LIBS:=$(APR_LIBS) $(JSON_C_LIBS)
 LDFLAGS:=-lapr-2 -ljson-c -lssl -lcrypto
 SRC:=../mongoose/mongoose.c libnetsrv.c netsrv.c
 BUILDS:=.tools/builds
-DIST:=echo
+CERT:=
+DIST:=
 VALGRIND:=
 
 all:
 	@echo "Usage:"
-	@echo "  make cert                      Builds OpenSSL certificates"
-	@echo "  make [debug [daemon]] service  Builds service"
-	@echo "  make run service_name          Runs service locally"
-	@echo "  make dist                      Builds Debian distribution"
-	@echo "  make clean                     Removes the builds directory"
+	@echo "  make [certs[debug[daemon]]] <service>  Builds the service"
+	@echo "  make run service_name                  Runs service locally"
+	@echo "  make dist                              Builds Debian distribution"
+	@echo "  make clean                             Removes the builds directory"
 	@echo
 
 debug:
@@ -28,19 +28,20 @@ daemon:
 	$(eval CFLAGS :=-D_DAEMON $(CFLAGS))
 
 dist:
-	$(eval DIST :=.tools/dist.sh)
+	$(eval DIST :=.tools/dist.sh $(dist-$(lastword $(MAKECMDGOALS))))
 
-# todo: make certs by service name
-cert:
-	@.tools/cert.sh
+certs:
+	$(eval CERT :=.tools/certs.sh $(lastword $(MAKECMDGOALS)))
 
 %:
+	$(CERT)
+	$(eval INCLUDES :=-I.tools/certs/$@ $(INCLUDES))
 	@mkdir -p $(BUILDS) && rm -rf $(BUILDS)/demo $(BUILDS)/demo.log
-	$(CC) $(CFLAGS) -o $(BUILDS)/$@ $(SRC) examples/$@.c $(INCLUDES) $(LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(BUILDS)/$@ $(SRC) services/$@.c $(INCLUDES) $(LIBS) $(LDFLAGS)
 	@cp $(BUILDS)/$@ $(BUILDS)/demo
 	@cp -r $(dist-apr) $(BUILDS)
 	@cp -r $(dist-json-c) $(BUILDS)
-	@$(DIST) $(dist-$@)
+	$(DIST)
 
 run:
 	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:$(BUILDS) \
@@ -54,6 +55,6 @@ test:
 	-i "https://localhost:2443/api/hello"
 
 clean:
-	rm -rf $(BUILDS)
+	rm -rf $(BUILDS) .tools/certs
 
 .PHONY: all debug daemon dist cert run test clean

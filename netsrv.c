@@ -46,7 +46,7 @@
 #endif
 
 #ifdef _TLS
-#include "netsrv.h"
+#include "certs.h"
 #ifdef _TLS_TWOWAY
 extern const char *s_tls_ca;
 #endif
