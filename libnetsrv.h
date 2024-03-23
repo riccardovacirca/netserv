@@ -1,6 +1,6 @@
 
-#ifndef NS_RUNTIME_H
-#define NS_RUNTIME_H
+#ifndef LIBNETSRV_H
+#define LIBNETSRV_H
 
 #include "apr.h"
 #include "apr_pools.h"
@@ -343,4 +343,4 @@ int ns_jwt_token_validate(apr_pool_t *mp, const char *tok, const char *key);
 #ifdef __cplusplus
 }
 #endif
-#endif /* NS_RUNTIME_H */
+#endif /* LIBNETSRV_H */

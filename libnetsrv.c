@@ -1,5 +1,5 @@
 
-#include "ns_runtime.h"
+#include "libnetsrv.h"
 
 /*
  * COMMON

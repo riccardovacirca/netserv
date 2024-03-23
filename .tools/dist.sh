@@ -1,4 +1,5 @@
 #!/bin/bash
+# Usage: ./dist.sh <name> <vers> <port1> <port3> <port3>
 
 function make_instance {
 NAME=$1
@@ -36,10 +37,18 @@ sed -i "s/{DBD}/${DBD}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
 sed -i "s/{CONN_S}/${CONN_S}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
 }
 
-NAME="nsusers"
+if [ $# -eq 0 ]; then
+  exit 0
+fi
+
+NAME=$1
+VERS=$2
+PORT_1=$3
+PORT_2=$4
+PORT_3=$5
+
 DIR=/tmp/${NAME}
 DESC="NetServ HTTP microservice for user management"
-VERS="0.0.1"
 MANT="Riccardo Vacirca<rvacirca23@gmail.com>"
 HOME="http:\/\/riccardovacirca.com"
 DBD="mysql"
@@ -100,39 +109,12 @@ cp .tools/builds/${NAME} ${DIR}/usr/bin/${NAME}
 cp .tools/builds/lib${NAME}.so ${DIR}/usr/lib/lib${NAME}.so
 cp .tools/builds/libnsruntime.so ${DIR}/usr/lib/libnsruntime.so
 
+make_instance "${NAME}" "${DIR}" "${PORT_1}" "${DBD}" "${CONN_S}"
+make_instance "${NAME}" "${DIR}" "${PORT_2}" "${DBD}" "${CONN_S}"
+make_instance "${NAME}" "${DIR}" "${PORT_3}" "${DBD}" "${CONN_S}"
 
-cat <<EOF > ${DIR}/etc/nginx/sites-available/ns_gateway.conf
-include /etc/nginx/sites-available/ns_*_upstream.conf;
-server {
-  listen 80;
-  server_name example.local;
-  include /etc/nginx/sites-available/ns_*_location.conf;
-  location / {
-    root /var/www/html/ns-webapp;
-  }
-}
-EOF
-
-cat <<EOF > ${DIR}/etc/nginx/sites-available/${NAME}_location.conf
-location /api/users/ {
-  rewrite ^/api/users(.*) /api$1 break;
-  proxy_pass http://ns-users;
-}
-EOF
-
-cat <<EOF > ${DIR}/etc/nginx/sites-available/${NAME}_upstream.conf
-upstream ns-users {
-  server localhost:8081 fail_timeout=10s max_fails=3;
-  server localhost:8082 fail_timeout=10s max_fails=3;
-  server localhost:8083 fail_timeout=10s max_fails=3;
-}
-EOF
-
-make_instance "${NAME}" "${DIR}" "8081" "${DBD}" "${CONN_S}"
-make_instance "${NAME}" "${DIR}" "8082" "${DBD}" "${CONN_S}"
-make_instance "${NAME}" "${DIR}" "8083" "${DBD}" "${CONN_S}"
-
-dpkg-deb --build ${DIR} ./${NAME}-${VERS}_amd64.deb
+mkdir -p .tools/dist
+dpkg-deb --build ${DIR} .tools/dist/${NAME}-${VERS}_amd64.deb
 #  rm -rf /tmp/${NAME}
 echo "done."
 echo

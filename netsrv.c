@@ -19,7 +19,7 @@
 #include "signal.h"
 
 #include "mongoose.h"
-#include "ns_runtime.h"
+#include "libnetsrv.h"
 
 #ifdef _DEBUG
 #define DEBUG 1
@@ -27,100 +27,49 @@
 #define DEBUG 0
 #endif
 
-#ifdef _DAEMONIZED
-#define DAEMONIZED 1
+#ifdef _DAEMON
+#define DAEMON 1
 #else
-#define DAEMONIZED 0
+#define DAEMON 0
 #endif
 
-#ifdef _MONGOOSE_DISABLED
-#define MONGOOSE_DISABLED 1
+#ifdef _MONGOOSE
+#define MONGOOSE 1
 #else
-#define MONGOOSE_DISABLED 0
+#define MONGOOSE 0
 #endif
 
-#ifdef _TLS_DISABLED
-#define TLS_DISABLED 1
+#ifdef _TLS
+#define TLS 1
 #else
-#define TLS_DISABLED 0
+#define TLS 0
+#endif
 
-static const char *s_tls_ca =
-  "-----BEGIN CERTIFICATE-----\n"
-  "MIIDXzCCAkegAwIBAgIUeXwJ5tgRmnMQAoKlkzvFRTdSDAUwDQYJKoZIhvcNAQEL\n"
-  "BQAwPzELMAkGA1UEBhMCSVQxDjAMBgNVBAgMBUl0YWx5MREwDwYDVQQKDAhDZXJ0\n"
-  "IEx0ZDENMAsGA1UEAwwEY2VydDAeFw0yNDAzMTkxMTU0MTJaFw0yNTAzMTkxMTU0\n"
-  "MTJaMD8xCzAJBgNVBAYTAklUMQ4wDAYDVQQIDAVJdGFseTERMA8GA1UECgwIQ2Vy\n"
-  "dCBMdGQxDTALBgNVBAMMBGNlcnQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n"
-  "AoIBAQDgd3Z/+vLFMK04aZgv0k7paZcNBR2WvgQJcEl8w0Hbo42x/u24c4hdQLa7\n"
-  "yM62xC5o4LzjDA03Bnb6PQwTBYLTLGwN0qmV0ncKnq67a9lWRvhTOkzjv0l7aoHQ\n"
-  "ggls8R7XegoKDNX5mu2otau1dg5neWmepdZh2c7IXP7J4AnyiH6CwQ2CU6Ijja46\n"
-  "JksZDPCfCTGXylURP/Q5bLrdSojxl6fA7vqSE+rprASbgEfQhFLRMPCow3cWzKjo\n"
-  "FyVRKJ56zkzTfatNwJDopA2gsHN5J+RGEwENBJh4z42y3AIX++GTgZQUTmoWZMQp\n"
-  "VUV3GQI7DcMasQuKYWxD9qDOmlIpAgMBAAGjUzBRMB0GA1UdDgQWBBS1rGRSTcd2\n"
-  "eIymxBTRKsWBEJG9RTAfBgNVHSMEGDAWgBS1rGRSTcd2eIymxBTRKsWBEJG9RTAP\n"
-  "BgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCLr6926cX7RNVeQsOC\n"
-  "yBn/3KzYuMTxfUKk33lj6Nc70MS2/x0ec7I38UAt65FCUVcS7ZDOWKGpA9Aj37+v\n"
-  "ra0sedFkTzHoVseNNapGfbnfU+Na7jX1+E9lqgbb3bIZxdejc2uo2FWbdP/mX2JI\n"
-  "sK9IoR4+jX77lEFz1Z/e0SMYyeBk/BTe/O/N0f5UJOTpYC3Xfv23qR51YQ05qmzy\n"
-  "iZXQiX4/aQNhymnFxN0LSE5lVfU+qUEaFj1gRDBcy2X1l5+JKGH/MQd0xWRPY2Hc\n"
-  "Auyxs1oih5xMBSFzoZZatXabqIZN2r7QJw3Js2STWEWx64Gn8U1egqqvjz19w/YB\n"
-  "EB7K\n"
-  "-----END CERTIFICATE-----\n";
-
-static const char *s_tls_cert =
-  "-----BEGIN CERTIFICATE-----\n"
-  "MIIDCTCCAfECFHnImK7xF6ggty1hk+7gY6n4cpcHMA0GCSqGSIb3DQEBCwUAMD8x\n"
-  "CzAJBgNVBAYTAklUMQ4wDAYDVQQIDAVJdGFseTERMA8GA1UECgwIQ2VydCBMdGQx\n"
-  "DTALBgNVBAMMBGNlcnQwHhcNMjQwMzE5MTE1NDQ4WhcNMjUwMzE5MTE1NDQ4WjBD\n"
-  "MQswCQYDVQQGEwJJVDEOMAwGA1UECAwFSXRhbHkxEzARBgNVBAoMClNlcnZlciBM\n"
-  "dGQxDzANBgNVBAMMBnNlcnZlcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC\n"
-  "ggEBAOLKedmz3LkQJT2n5B75TDFSrSoiCYnUeoUDpi0TTDXBvewJ5MX5YW3+lv7I\n"
-  "CoEnjQ9Lz4yA5nfC8feib0PuxZZBXQWuiyDilVqWpUIXBgEGNyyzOtWeGJl3P6jm\n"
-  "4ICJ4iU0nF7wQm5+1OhbtmmuldywtUddLkNcfxezP4rn05K9LVfGJuhBidxjwto+\n"
-  "qjYw99AvoGA0Hd/2ABwv+1kkmJ9oMdDFAlcJCJ8+ifsV6Ih0WkGpnH0Zbw+xYNj3\n"
-  "aBmr7lU6bigqcnrv2gDWCaz481nsrkhmHs53fWOMrfIi0AnOMQSAZ6q6nilqREkG\n"
-  "6//axui57Di4bS3IGwXwJA4IG7ECAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAjqrE\n"
-  "f/ZAzkPVQ3S2jNRPlxkaF54sZ5ULMMBKf+ynJgZ6JVI8p0o2vwJ8vDrwsI+hOu7M\n"
-  "s5PLwyjJoRBm5fMzpHpM+X/EbO0Br8lQw3Nplmel9PtXshzAFIX7Q8iE9rUgGyXU\n"
-  "N/gbJHDjDJ375bPD7hy40BTBsemPHB+u2FQNzFLRZU2TOljw9DMMGNDJBoNH4SUp\n"
-  "zko31m1x7cwgq/9GEu3ZctCMisxkwI7U+Ny1IWJaQp/jesGymy2U335WGrBL2Hzk\n"
-  "OJNYyHYy7GHWD1Gt7dAzVG0yHlT3ch2z7S2MRT7DO3y17XPTeBbVi5jkqp39NB4i\n"
-  "BcP7B7RrNC3MtV9fVA==\n"
-  "-----END CERTIFICATE-----\n";
-
-static const char *s_tls_key =
-  "-----BEGIN RSA PRIVATE KEY-----\n"
-  "MIIEowIBAAKCAQEA4sp52bPcuRAlPafkHvlMMVKtKiIJidR6hQOmLRNMNcG97Ank\n"
-  "xflhbf6W/sgKgSeND0vPjIDmd8Lx96JvQ+7FlkFdBa6LIOKVWpalQhcGAQY3LLM6\n"
-  "1Z4YmXc/qObggIniJTScXvBCbn7U6Fu2aa6V3LC1R10uQ1x/F7M/iufTkr0tV8Ym\n"
-  "6EGJ3GPC2j6qNjD30C+gYDQd3/YAHC/7WSSYn2gx0MUCVwkInz6J+xXoiHRaQamc\n"
-  "fRlvD7Fg2PdoGavuVTpuKCpyeu/aANYJrPjzWeyuSGYeznd9Y4yt8iLQCc4xBIBn\n"
-  "qrqeKWpESQbr/9rG6LnsOLhtLcgbBfAkDggbsQIDAQABAoIBAQDRyFV6aYPMtACe\n"
-  "zcSYWiZ+oWmIxb9o/WDv1XZLz8P5HePeiTBTaOEU7CEkQEpnOfyjn462+y00ruFA\n"
-  "HcMqZZ3j5UZ00QXlP3LEPwFS5xUosWUsNgZAP2Ol4cbDJ/2XKPRFUisrLrdkmnG7\n"
-  "Fcrgaxw47kRhZPI8YT024RnwFY2B9zpGrSyxChQAja1wmlrcacBkY6gSH+s19X1O\n"
-  "TfK6BH+KSVkf/j1W9f3kQRMQTqRmdO5ghKplEurtZv2ud+qNlavVjjoIyfv8xDG6\n"
-  "jAZReO5fQ7ZhiyfT1gPWvDMz/yWgSJsCbjDJ0mHKlTvFqrcDcD370u1JwJ13IsWO\n"
-  "KluIYL2BAoGBAPLrwDfCKBA4gygvFMmT2qfd8iy6ZhSvcxYb7csi5js3Tvqf7SJe\n"
-  "a62YkUVPgiHyreMxtOMsTwi5MiZzz/uctfbnmHdMohWvu+Dfukm63FrZW9Evz4De\n"
-  "3cQrdmjD6PqDsvF30ANtguaaXMjeeyp2JeRPiosBmfjWCcMo3KpU08HpAoGBAO8A\n"
-  "ZqQZRou+x0z3XL1/FyBCwwuN65LW3WwRHpXDmpg6aVoD+Ti9Wnya/101M9Qk829y\n"
-  "Uc0LyHc2EMcwRKrNnfbF0r+zy5IZsFogP3rv+mQWPdoCDpVb+jWfS1OuX0ruV+AB\n"
-  "rMWI0b6MPozyIeTMY59PgjpncjTDlAbl/JsHzuaJAoGAZ5IIRD2toyzVDr70F/XI\n"
-  "FiZU6KkYeN1NLjH+MsvQaZLtQ4IIMs0bD8qqtWhuzVaQuPsqamkr0UZUkXxzQo3Q\n"
-  "L1MS+FpeCO0CJ6B75o+a/8kIkqnVyNY8qzT0qTpODPE1zCoPMEbytqs9wA7LaJEz\n"
-  "GqKnKRknsqZfRywW2TCNkHECgYAEk6ZjiBRgwrOAVtBQ1Kk1tfGUPBCBzFmLIzzJ\n"
-  "s2g3eA7iaWcRXhbogfNX7pfifR6oSLEmUw5wsflaRyNZffyDaEBj6WaBkrpcz3dH\n"
-  "vGa4GfDvRtDOrWc6NaW0oYczoSLPqFiNo9QYaQkdm9loTz2tJFGjGq4GMqSYCTlw\n"
-  "IpMkuQKBgA1pSq64+89OtMhUlnljfsOwiLjQ6rlu2A3hPlOrK+nwMPALeXyRuUhK\n"
-  "lZqZhzE3Gb9PKRwyZVAxRR/+X+xkUiWknQowTZ0j4QIsaweVUM8o+Ob3saWd7ueR\n"
-  "ps2JdPk4UiUMufm61Fk7IwaW6aWhSNplXM8cjtrtkdBICVOxRgZL\n"
-  "-----END RSA PRIVATE KEY-----\n";
-
+#ifdef _TLS
+#include "netsrv.h"
+#ifdef _TLS_TWOWAY
+extern const char *s_tls_ca;
+#endif
+extern const char *s_tls_cert;
+extern const char *s_tls_key;
 #endif
 
 #define HTTP_OK_FMT "HTTP/1.1 200 OK\r\n%sContent-Length: %d\r\n\r\n"
 #define NS_DBD_POOL_INIT_SIZE 20
+
+#ifdef _DEMO
+#define JSON_RESPONSE "{\"err\":%s,\"log\":%s,\"out\":%s}"
+int HelloWorldController(ns_service_t *s) {
+  const char ctype[] = "application/json";
+  ns_http_response_hd_set(s->response, "Content-Type", ctype);
+  const char *msg = ns_json_encode(s->pool, "Hello, World!", NS_JSON_T_STRING);
+  ns_printf(s, JSON_RESPONSE, "false", "null", msg);
+  return 200;
+}
+void ns_handler(ns_service_t *s) {
+  ns_route(s, "GET", "/api/hello", HelloWorldController);
+}
+#endif
 
 typedef struct ns_dbd_pool_t {
   apr_array_header_t *connections;
@@ -422,9 +371,11 @@ static void ns_http_request_handler(struct mg_connection *c, int ev, void *ev_da
   };
   do {
     if (ev == MG_EV_ACCEPT && c->fn_data != NULL) {
-      #ifndef _TLS_DISABLED
+      #ifdef _TLS
       struct mg_tls_opts opts = {
+        #ifdef _TLS_TWOWAY
         .ca = mg_str(s_tls_ca),
+        #endif
         .cert = mg_str(s_tls_cert),
         .key = mg_str(s_tls_key)
       };
@@ -770,7 +721,7 @@ static int ns_server_init(apr_pool_t *mp, ns_server_t **s, int argc, char *argv[
     st.flag.args = ns_cmd_args_parse(*s, argc, argv, er_msg);
     if ((st.error = !st.flag.args)) break;
     (*s)->addr = apr_psprintf(mp, "%s:%s", (*s)->host, (*s)->port);
-    if (!TLS_DISABLED) {
+    if (TLS) {
       if ((*s)->port_s) {
         (*s)->addr_s = apr_psprintf(mp, "%s:%s", (*s)->host, (*s)->port_s);
       }
@@ -867,19 +818,22 @@ int main(int argc, char **argv) {
         ns_log((st.server)->logger, "INFO", "DBD connection pool initialized");
       }
     }
-    if (DAEMONIZED) {
+    if (DAEMON) {
       ns_daemonize();
       if (DEBUG) {
-        ns_log((st.server)->logger, "INFO", "Service daemonized");
+        ns_log((st.server)->logger, "INFO", "Service daemon");
       }
     }
-    if (!MONGOOSE_DISABLED) {
+    if (MONGOOSE) {
       mg_mgr_init(&(st.mgr));
       if (DEBUG) {
         ns_log((st.server)->logger, "INFO", "HTTP server initialized");
       }
-      if (!TLS_DISABLED) {
+      if (TLS) {
         if ((st.server)->addr_s) {
+          printf("%s\n", (st.server)->addr);
+          printf("%s\n", (st.server)->addr_s);
+          
           mg_http_listen(&(st.mgr), (st.server)->addr,
                          ns_http_request_handler, NULL);
           mg_http_listen(&(st.mgr), (st.server)->addr_s,
