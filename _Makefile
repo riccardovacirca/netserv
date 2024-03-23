@@ -1,0 +1,65 @@
+
+include .tools/Makefile.config
+
+CC:=clang
+CFLAGS:=-std=gnu99 -D_MONGOOSE -DMG_TLS=MG_TLS_OPENSSL -D_TLS -D_TLS_TWOWAY
+INCLUDES:=-I. -I$(APR)/dist/include/apr-2 -I$(JSON_C) -I$(JSON_C)/dist -I$(MONGOOSE) -I/usr/include
+LIBS:=-L$(APR)/dist/lib -L$(JSON_C)/dist
+LDFLAGS:=-lapr-2 -ljson-c -lssl -lcrypto
+SRC:=$(MONGOOSE)/mongoose.c libnetsrv.c netsrv.c
+
+CERTS:=
+DIST:=
+VALGRIND:=
+
+all:
+	@echo "Usage:"
+	@echo "  make [certs[debug[daemon]]] <service>  Builds the service"
+	@echo "  make run service_name                  Runs service locally"
+	@echo "  make dist                              Builds Debian distribution"
+	@echo "  make clean                             Removes the builds directory"
+	@echo
+
+debug:
+	$(eval CFLAGS :=-g -D_DEBUG $(CFLAGS))
+	$(eval VALGRIND :=valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes)
+
+daemon:
+	$(eval CFLAGS :=-D_DAEMON $(CFLAGS))
+
+dist:
+	$(eval DIST :=.tools/dist.sh $(dist-$(lastword $(MAKECMDGOALS))))
+
+certs:
+	$(eval CERTS :=.tools/certs.sh $(lastword $(MAKECMDGOALS)))
+
+%:
+	$(CERTS)
+	$(eval INCLUDES :=-I.tools/certs/$@ $(INCLUDES))
+	@mkdir -p .tools/builds && rm -rf .tools/builds/demo .tools/builds/demo.log
+	$(CC) $(CFLAGS) -o .tools/builds/$@ $(SRC) services/$@.c $(INCLUDES) $(LIBS) $(LDFLAGS)
+	@cp .tools/builds/$@ .tools/builds/demo
+	@cp -r $(APR)/dist/lib/libapr-2.* .tools/builds
+	@cp -r $(JSON_C)/dist/libjson-c.* .tools/builds
+	$(DIST)
+
+run:
+	LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:.tools/builds \
+	$(VALGRIND) .tools/builds/demo -h 0.0.0.0 -p 2310 -s 2443 \
+	-l .tools/builds/demo.log -d mysql \
+	-D "host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
+
+test:
+	curl -k -c "/tmp/cookie.txt" -b "/tmp/cookie.txt" \
+	--key ".tools/certs/client.key" --cert ".tools/certs/client.crt" \
+	-i "https://localhost:2443/api/hello"
+
+dep:
+	@echo
+	@readelf -d .tools/builds/demo | grep 'NEEDED'
+	@echo
+
+clean:
+	rm -rf .tools/builds .tools/certs
+
+.PHONY: all debug daemon dist certs run test clean

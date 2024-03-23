@@ -2,18 +2,18 @@
 # Usage: ./dist.sh <name> <vers> <port1> <port3> <port3>
 
 function make_instance {
-NAME=$1
-DIR=$2
-PORT=$3
-DBD=$4
-CONN_S=$5
-echo "systemctl enable ${NAME}_${PORT}.service" >> ${DIR}/DEBIAN/postinst
-echo "systemctl start ${NAME}_${PORT}.service" >> ${DIR}/DEBIAN/postinst
-echo "if systemctl is-active ${NAME}_${PORT}.service >/dev/null; then" >> ${DIR}/DEBIAN/prerm
-echo "systemctl stop ${NAME}_${PORT}.service" >> ${DIR}/DEBIAN/prerm
-echo "fi" >> ${DIR}/DEBIAN/prerm
-  
-cat <<EOF > ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
+  NAME=$1
+  DIR=$2
+  PORT=$3
+  DBD=$4
+  CONN_S=$5
+  echo "systemctl enable ${NAME}_${PORT}.service" >> ${DIR}/DEBIAN/postinst
+  echo "systemctl start ${NAME}_${PORT}.service" >> ${DIR}/DEBIAN/postinst
+  echo "if systemctl is-active ${NAME}_${PORT}.service >/dev/null; then" >> ${DIR}/DEBIAN/prerm
+  echo "systemctl stop ${NAME}_${PORT}.service" >> ${DIR}/DEBIAN/prerm
+  echo "fi" >> ${DIR}/DEBIAN/prerm
+    
+  cat <<EOF > ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
 [Unit]
 Description={NAME} service
 After=network.target
@@ -31,10 +31,10 @@ RemainAfterExit=true
 WantedBy=multi-user.target
 EOF
 
-sed -i "s/{NAME}/${NAME}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
-sed -i "s/{PORT}/${PORT}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
-sed -i "s/{DBD}/${DBD}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
-sed -i "s/{CONN_S}/${CONN_S}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
+  sed -i "s/{NAME}/${NAME}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
+  sed -i "s/{PORT}/${PORT}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
+  sed -i "s/{DBD}/${DBD}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
+  sed -i "s/{CONN_S}/${CONN_S}/g" ${DIR}/etc/systemd/system/${NAME}_${PORT}.service
 }
 
 if [ $# -eq 0 ]; then
@@ -56,7 +56,7 @@ CONN_S="host=127.0.0.1,port=3306,user=test,pass=test,dbname=test"
 
 mkdir -p ${DIR}/DEBIAN
 mkdir -p ${DIR}/etc
-mkdir -p ${DIR}/etc/nginx/sites-available
+# mkdir -p ${DIR}/etc/nginx/sites-available
 mkdir -p ${DIR}/etc/systemd/system
 mkdir -p ${DIR}/usr/bin
 mkdir -p ${DIR}/usr/lib
@@ -106,8 +106,6 @@ chmod +x ${DIR}/DEBIAN/prerm
 chmod +x ${DIR}/DEBIAN/postrm
 
 cp .tools/builds/${NAME} ${DIR}/usr/bin/${NAME}
-cp .tools/builds/lib${NAME}.so ${DIR}/usr/lib/lib${NAME}.so
-cp .tools/builds/libnsruntime.so ${DIR}/usr/lib/libnsruntime.so
 
 make_instance "${NAME}" "${DIR}" "${PORT_1}" "${DBD}" "${CONN_S}"
 make_instance "${NAME}" "${DIR}" "${PORT_2}" "${DBD}" "${CONN_S}"
@@ -118,5 +116,3 @@ dpkg-deb --build ${DIR} .tools/dist/${NAME}-${VERS}_amd64.deb
 #  rm -rf /tmp/${NAME}
 echo "done."
 echo
-
-
