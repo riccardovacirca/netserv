@@ -1,12 +1,13 @@
 #!/bin/bash
-
 if [ $# -eq 0 ]; then
-  exit 1
+  exit 0
 fi
-
 name=$1
 dir=.tools/etc/certificates
-rm -rf ${dir}/${name}.* src/${name}/certs.h
+if [ -e "${dir}/${name}.key" ]; then
+  echo "File ${dir}/${name}.key exists."
+  exit 0;
+fi
 openssl genrsa -out ${dir}/${name}.key 2048
 openssl req -new -key ${dir}/${name}.key -out ${dir}/${name}.csr -subj "/CN=${name}"
 openssl x509 -req -days 365 -in ${dir}/${name}.csr -CA ${dir}/ca_root.crt -CAkey ${dir}/ca_root.key -set_serial 01 -out ${dir}/${name}.crt
@@ -39,13 +40,13 @@ while IFS= read -r line; do
 done < "$server_key_file"
 server_key_variable="${server_key_variable};"
 
-echo -e "#ifndef CERT_H" > src/${name}/certs.h
-echo -e "#define CERT_H\n" >> src/${name}/certs.h
-echo -e "#ifdef _TLS" >> src/${name}/certs.h
-echo -e "#ifdef _TLS_TWOWAY" >> src/${name}/certs.h
-echo -e "$ca_crt_variable" >> src/${name}/certs.h
-echo -e "#endif\n" >> src/${name}/certs.h
-echo -e "$server_crt_variable" >> src/${name}/certs.h
-echo -e "$server_key_variable" >> src/${name}/certs.h
-echo -e "#endif" >> src/${name}/certs.h
-echo -e "#endif /* CERT_H */" >> src/${name}/certs.h
+echo -e "#ifndef CERT_H" > .tools/src/${name}/certs.h
+echo -e "#define CERT_H\n" >> .tools/src/${name}/certs.h
+echo -e "#ifdef _TLS" >> .tools/src/${name}/certs.h
+echo -e "#ifdef _TLS_TWOWAY" >> .tools/src/${name}/certs.h
+echo -e "$ca_crt_variable" >> .tools/src/${name}/certs.h
+echo -e "#endif\n" >> .tools/src/${name}/certs.h
+echo -e "$server_crt_variable" >> .tools/src/${name}/certs.h
+echo -e "$server_key_variable" >> .tools/src/${name}/certs.h
+echo -e "#endif" >> .tools/src/${name}/certs.h
+echo -e "#endif /* CERT_H */" >> .tools/src/${name}/certs.h

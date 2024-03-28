@@ -1,0 +1,12 @@
+#!/bin/bash
+if [ $# -eq 0 ]; then
+  exit 0;
+fi
+json_c_dir=$1;
+curr_dir=$(pwd);
+cd $json_c_dir && cd .. && rm -rf json-c-build && mkdir json-c-build && cd json-c-build \
+  && cmake ../$(basename "$json_c_dir") -DCMAKE_INSTALL_PREFIX=/tmp/json-c-install \
+  && make && make install \
+  && mv /tmp/json-c-install/include/json-c $curr_dir/.tools/include \
+  && mv /tmp/json-c-install/lib $curr_dir/.tools/lib/json-c \
+  && rm -rf /tmp/json-c-install

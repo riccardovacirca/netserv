@@ -1,7 +1,9 @@
 #!/bin/bash
-mkdir -p .tools/dist .tools/etc/certificates .tools/lib .tools/include
-mkdir -p .tools/tmp .tools/usr/bin .tools/usr/lib .tools/src/$1
-cat <<EOF > src/$1/$1.c
+if [ -e "$1.c" ]; then
+  echo "File $1.c exists.";
+  exit 0;
+fi
+cat <<EOF > $1.c
 #include "libnetsrv.h"
 int HelloWorldController(ns_service_t *s) {
   ns_http_response_hd_set(s->response, "Content-Type", "application/json");

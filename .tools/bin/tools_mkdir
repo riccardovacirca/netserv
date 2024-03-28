@@ -1,0 +1,3 @@
+#!/bin/bash
+mkdir -p .tools/dist .tools/etc/certificates .tools/lib .tools/include
+mkdir -p .tools/tmp .tools/usr/bin .tools/usr/lib

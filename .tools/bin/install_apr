@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ $# -eq 0 ]; then
+  exit 0;
+fi
+apr_dir=$1;
+curr_dir=$(pwd);
+cd $apr_dir && ./buildconf \
+	&& ./configure --prefix=/tmp/apr-install --with-mysql --with-pgsql --with-sqlite3 --with-odbc \
+	&& make && make install && mv /tmp/apr-install/include/apr-2 $curr_dir/.tools/include \
+  && mv /tmp/apr-install/lib $curr_dir/.tools/lib/apr-2 && rm -rf /tmp/apr-install;
