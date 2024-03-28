@@ -1,6 +1,3 @@
-serv:=$(lastword $(MAKECMDGOALS))
-
-include src/$(serv)/Makefile.config
 
 CC:=clang
 CFLAGS:=-std=gnu99 -D_MONGOOSE -DMG_TLS=MG_TLS_OPENSSL -D_TLS -D_TLS_TWOWAY
@@ -9,68 +6,23 @@ LIBS:=-L.tools/lib/apr-2 -L.tools/lib/json-c
 LDFLAGS:=-lapr-2 -ljson-c -lssl -lcrypto
 SRC:=mongoose.c libnetsrv.c netsrv.c
 
-cmd:=$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -o .tools/bin/$(serv) $(SRC) $(EXTRA_SRC) \
-		 $(serv)/$(serv).c $(INCLUDES) $(EXTRA_INCLUDES) $(LIBS) $(EXTRA_LIBS) \
-		 $(LDFLAGS) $(EXTRA_LDFLAGS)
+EXTRA_CFLAGS:=
+EXTRA_INCLUDES:=
+EXTRA_LIBS:=
+EXTRA_LDFLAGS:=
+EXTRA_SRC:=
 
-all: help
+all:
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -o $(NAME) $(SRC) $(EXTRA_SRC) \
+	$(NAME).c $(INCLUDES) $(EXTRA_INCLUDES) $(LIBS) $(EXTRA_LIBS) \
+	$(LDFLAGS) $(EXTRA_LDFLAGS)
 
-help:
-	@echo "Usage:"
-	@echo "  make [debug[ daemon]] <service_name>  Builds service"
-	@echo "  make run <db_name> <service_name>     Runs service locally"
-	@echo "  make deb                              Builds Debian distribution"
-	@echo "  make clean                            Removes the builds directory"
-	@echo
-
-cert-ca:
-	@chmod +x .tools/bin/cert_ca && .tools/bin/cert_ca
-
-cert-client:
-	@chmod +x .tools/bin/cert_client && .tools/bin/cert_client
-
-cert-service:
-	$(eval cmd:=.tools/bin/cert_service $(serv))
+$(NAME):
+	@chmod +x .tools/bin/tools_mkdir
+	@.tools/bin/tools_mkdir
+	@chmod +x .tools/bin/service
+	.tools/bin/service $(NAME)
+	@chmod +x .tools/bin/cert_ca
+	.tools/bin/cert_ca
 	@chmod +x .tools/bin/cert_service
-
-service:
-	$(eval cmd:=.tools/bin/serv $(serv))
-	@mkdir -p src/$(serv) && chmod +x .tools/bin/serv
-
-deb:
-	$(eval cmd:=.tools/bin/deb $(serv))
-	@chmod +x .tools/bin/deb
-
-deps:
-	$(eval cmd:=.tools/bin/deps $(serv))
-	@chmod +x .tools/bin/deps
-
-client:
-
-mysql:
-ifneq ($(mysql_driver),)
-	$(eval cmd:=$(cmd) -d $(mysql_driver) -D $(mysql_conn_s))
-endif
-
-run:
-	$(eval cmd:=LD_LIBRARY_PATH=$$LD_LIBRARY_PATH)
-	$(eval cmd:=$(cmd):.tools/lib/apr-2:.tools/lib/json-c)
-	$(eval cmd:=$(cmd) $(valgrind))
-	$(eval cmd:=$(cmd) .tools/bin/$(serv) -h $(host) -p $(port) -s $(ssl_port))
-	$(eval cmd:=$(cmd) -l .tools/var/log/$(serv).log)
-	@chmod +x .tools/bin/$(serv)
-
-debug:
-	$(eval CFLAGS :=-g -D_DEBUG $(CFLAGS))
-
-daemon:
-	$(eval CFLAGS :=-D_DAEMON $(CFLAGS))
-
-%:
-ifneq ($(wildcard src/$(serv)/$(serv).c),)
-	$(cmd)
-endif
-
-clean:
-
-.PHONY: all cert-ca cert-client cert-service service debug daemon mysql run deb deps client
+	.tools/bin/cert_service $(NAME)
