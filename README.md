@@ -85,3 +85,8 @@ upstream ns-helloworld {
   server remote.host:8083 fail_timeout=10s max_fails=3;
 }
 ```
+
+test:
+	curl -k -c "/tmp/cookie.txt" -b "/tmp/cookie.txt" \
+	--key ".tools/certs/client.key" --cert ".tools/certs/client.crt" \
+	-i "https://localhost:2443/api/hello"
