@@ -1,5 +1,6 @@
 #!/bin/bash
-mkdir -p src/$1
+mkdir -p .tools/dist .tools/etc/certificates .tools/lib .tools/include
+mkdir -p .tools/tmp .tools/usr/bin .tools/usr/lib .tools/src/$1
 cat <<EOF > src/$1/$1.c
 #include "libnetsrv.h"
 int HelloWorldController(ns_service_t *s) {

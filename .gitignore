@@ -1,0 +1,10 @@
+.tools/dist/*
+.tools/etc/certificates/*
+.tools/lib/*
+.tools/include/*
+.tools/opt/*
+.tools/src/*
+.tools/tmp/*
+.tools/usr/bin/*
+.tools/usr/lib/*
+.tools/var/log/*
